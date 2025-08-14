@@ -126,26 +126,12 @@ let Payable = [];
 let TotalCash = {};
 let FamilyMembers = ['me','wife'];
 let FairSpend = [];
+let currentPerson = 'me';
 let standardComments = ["Voldo Fuel","Volvo Servis","Vadaks utilities","Pension fond","Vadaks Serviss"];
 
-function initJanuary() {
-  if(!Income.length){
-    Income.push({year:2025,month:1,person:'me',source:'Зарплата',amount:3000,type:1});
-    Income.push({year:2025,month:1,person:'wife',source:'Зарплата',amount:2500,type:1});
-  }
-  if(!Payable.length){
-    Payable.push({year:2025,month:1,person:'me',type:'personal',amount:100,comment:'Voldo Fuel'});
-    Payable.push({year:2025,month:1,person:'me',type:'personal',amount:50,comment:'Volvo Servis'});
-    Payable.push({year:2025,month:1,person:'wife',type:'personal',amount:80,comment:'Vadaks utilities'});
-  }
-  if(!TotalCash['me']) TotalCash['me'] = {1:500};
-  if(!TotalCash['wife']) TotalCash['wife'] = {1:300};
-}
-
-let currentPerson = 'me';
-document.getElementById('personMe').addEventListener('click', ()=>selectPerson('me'));
-document.getElementById('personWife').addEventListener('click', ()=>selectPerson('wife'));
-
+// --- Выбор пользователя ---
+document.getElementById('personMe').addEventListener('click',()=>selectPerson('me'));
+document.getElementById('personWife').addEventListener('click',()=>selectPerson('wife'));
 function selectPerson(person){
   currentPerson = person;
   document.getElementById('personMe').classList.toggle('active', person==='me');
@@ -153,7 +139,8 @@ function selectPerson(person){
   loadData();
 }
 
-function initIncomeFields() {
+// --- Создание полей ---
+function initIncomeFields(){
   const container = document.getElementById("incomeFields");
   container.innerHTML = '';
   for(let i=0;i<3;i++){
@@ -165,36 +152,34 @@ function initIncomeFields() {
     container.appendChild(div);
   }
 }
-
-function initPersonalExpenses() {
+function initPersonalExpenses(){
   const container = document.getElementById("personalExpenses");
-  container.innerHTML = '';
+  container.innerHTML='';
   for(let i=0;i<10;i++){
-    const div = document.createElement('div');
+    const div=document.createElement('div');
     div.classList.add('expense-line');
     if(i<5){
-      div.innerHTML = `<input type="number" class="personal-expense individual-expense" placeholder="Индивидуальная трата (€)">
-                       <select class="personal-comment comment-black"><option value="">--</option>${standardComments.map(c=>`<option>${c}</option>`).join('')}</select>`;
+      div.innerHTML=`<input type="number" class="personal-expense individual-expense" placeholder="Индивидуальная трата (€)">
+                     <select class="personal-comment comment-black"><option value="">--</option>${standardComments.map(c=>`<option>${c}</option>`).join('')}</select>`;
     } else {
-      div.innerHTML = `<input type="number" class="personal-expense individual-expense" placeholder="Индивидуальная трата (€)">
-                       <input type="text" class="personal-comment" placeholder="Комментарий">`;
+      div.innerHTML=`<input type="number" class="personal-expense individual-expense" placeholder="Индивидуальная трата (€)">
+                     <input type="text" class="personal-comment" placeholder="Комментарий">`;
     }
     container.appendChild(div);
   }
 }
-
-function initExtraExpenses() {
-  const container = document.getElementById("extraExpenses");
-  container.innerHTML = '';
+function initExtraExpenses(){
+  const container=document.getElementById("extraExpenses");
+  container.innerHTML='';
   for(let i=0;i<10;i++){
-    const div = document.createElement('div');
+    const div=document.createElement('div');
     div.classList.add('extra-line');
     if(i<5){
-      div.innerHTML = `<input type="number" class="extra-expense" placeholder="Сумма (€)">
-                       <select class="extra-comment comment-black"><option value="">--</option>${standardComments.map(c=>`<option>${c}</option>`).join('')}</select>`;
+      div.innerHTML=`<input type="number" class="extra-expense" placeholder="Сумма (€)">
+                     <select class="extra-comment comment-black"><option value="">--</option>${standardComments.map(c=>`<option>${c}</option>`).join('')}</select>`;
     } else {
-      div.innerHTML = `<input type="number" class="extra-expense" placeholder="Сумма (€)">
-                       <input type="text" class="extra-comment" placeholder="Комментарий">`;
+      div.innerHTML=`<input type="number" class="extra-expense" placeholder="Сумма (€)">
+                     <input type="text" class="extra-comment" placeholder="Комментарий">`;
     }
     container.appendChild(div);
   }
@@ -205,31 +190,32 @@ function attachInputListeners(){
   document.querySelectorAll('#incomeFields input, #personalExpenses input, #personalExpenses select, #extraExpenses input, #extraExpenses select, #manual-total')
     .forEach(input=>input.addEventListener('input', saveData));
 }
-
-document.getElementById("addIncome").addEventListener('click',()=>{initIncomeFields();attachInputListeners();});
+document.getElementById("addIncome").addEventListener('click',()=>{
+  initIncomeFields();
+  attachInputListeners();
+});
 document.getElementById("yearSelect").addEventListener('change', loadData);
 document.getElementById("monthSelect").addEventListener('change', loadData);
 document.getElementById("statsYearSelect").addEventListener('change', updateStatistics);
-
 document.getElementById("applyCorrection").addEventListener('click',()=>{
-  let val = +document.getElementById("correctionValue").value || 0;
+  let val= +document.getElementById("correctionValue").value || 0;
   const month = document.getElementById("monthSelect").selectedIndex+1;
-  if(!TotalCash[currentPerson]) TotalCash[currentPerson] = {};
-  if(!TotalCash[currentPerson][month]) TotalCash[currentPerson][month] = 0;
-  TotalCash[currentPerson][month] += val;
+  if(!TotalCash[currentPerson]) TotalCash[currentPerson]={};
+  if(!TotalCash[currentPerson][month]) TotalCash[currentPerson][month]=0;
+  TotalCash[currentPerson][month]+=val;
   loadData();
 });
 
-// --- Сохранение данных ---
+// --- Сохранение и отправка на сервер ---
 function saveData(){
   const year = +document.getElementById("yearSelect").value;
   const month = document.getElementById("monthSelect").selectedIndex+1;
 
   // Доходы
   document.querySelectorAll('#incomeFields div').forEach(div=>{
-    const source = div.querySelector('.income-source').value;
-    const amount = +div.querySelector('.income-amount').value || 0;
-    const type = +div.querySelector('.income-type').value;
+    const source=div.querySelector('.income-source').value;
+    const amount=+div.querySelector('.income-amount').value||0;
+    const type=+div.querySelector('.income-type').value;
     if(source){
       let exist = Income.find(r=>r.year===year && r.month===month && r.person===currentPerson && r.source===source);
       if(exist) exist.amount=amount, exist.type=type;
@@ -239,159 +225,157 @@ function saveData(){
 
   // Расходы
   Payable = Payable.filter(r=>!(r.year===year && r.month===month && r.person===currentPerson));
-  const manualTotal = +document.getElementById("manual-total").value || 0;
+  const manualTotal = +document.getElementById("manual-total").value||0;
   Payable.push({year,month,person:currentPerson,type:'manualTotal',amount:manualTotal});
   document.querySelectorAll('#personalExpenses div').forEach((div,i)=>{
-    const amount = +div.querySelector('.personal-expense').value || 0;
-    let comment = i<5?div.querySelector('select').value:div.querySelector('input').value;
+    const amount=+div.querySelector('.personal-expense').value||0;
+    const comment = i<5?div.querySelector('select').value:div.querySelector('input').value;
     if(amount>0 || comment) Payable.push({year,month,person:currentPerson,type:'personal',amount,comment});
   });
   document.querySelectorAll('#extraExpenses div').forEach((div,i)=>{
-    const amount = +div.querySelector('.extra-expense').value || 0;
-    let comment=i<5?div.querySelector('select').value:div.querySelector('input').value;
+    const amount=+div.querySelector('.extra-expense').value||0;
+    const comment = i<5?div.querySelector('select').value:div.querySelector('input').value;
     if(amount>0 || comment) Payable.push({year,month,person:currentPerson,type:'extra',amount,comment});
   });
 
-  if(!TotalCash[currentPerson]) TotalCash[currentPerson] = {};
-  if(!TotalCash[currentPerson][month]) {
-    let prevMonthCash = TotalCash[currentPerson][month-1] || 0;
-    TotalCash[currentPerson][month] = prevMonthCash;
-  }
+  if(!TotalCash[currentPerson]) TotalCash[currentPerson]={};
+  if(!TotalCash[currentPerson][month]) TotalCash[currentPerson][month] = TotalCash[currentPerson][month-1]||0;
 
   updateFairSpend();
   updateFamilyExpense();
   updateMonthStats();
   updateStatistics();
+  attachInputListeners();
+  saveToDB(); // сохраняем в базу
 }
 
-function updateFairSpend(){
-  const year = +document.getElementById("yearSelect").value;
-  const month = document.getElementById("monthSelect").selectedIndex+1;
+// --- Отправка на сервер ---
+async function saveToDB(){
+  const year=+document.getElementById("yearSelect").value;
+  const month=document.getElementById("monthSelect").selectedIndex+1;
+  try{
+    await fetch('/api/saveData',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({year,month,person:currentPerson,Income,Payable,TotalCash})
+    });
+  }catch(e){console.error("Ошибка сохранения:",e);}
+}
 
-  const totalIncomeYearAll = Income.filter(r=>r.year===year).reduce((sum,r)=>sum+r.amount,0);
-  const totalFamilyExpenseAll = FamilyMembers.reduce((sum,p)=>{
+// --- FairSpend ---
+function updateFairSpend(){
+  const year=+document.getElementById("yearSelect").value;
+  const month=document.getElementById("monthSelect").selectedIndex+1;
+  const totalIncomeYear = Income.filter(r=>r.year===year).reduce((a,b)=>a+b.amount,0);
+  const totalFamilyExpense = FamilyMembers.reduce((sum,p)=>{
     const manual = Payable.find(r=>r.year===year && r.month===month && r.person===p && r.type==='manualTotal')?.amount||0;
     const personal = Payable.filter(r=>r.year===year && r.month===month && r.person===p && r.type==='personal').reduce((a,b)=>a+b.amount,0);
     return sum + (manual-personal);
   },0);
-
   FamilyMembers.forEach(p=>{
     const userIncomeYear = Income.filter(r=>r.year===year && r.person===p).reduce((a,b)=>a+b.amount,0);
-    const percentIncome = totalIncomeYearAll? userIncomeYear/totalIncomeYearAll : 0;
-    const fair = totalFamilyExpenseAll * percentIncome;
+    const fair = totalIncomeYear? totalFamilyExpense*(userIncomeYear/totalIncomeYear):0;
     let exist = FairSpend.find(f=>f.year===year && f.month===month && f.person===p);
     if(exist) exist.fair=fair;
     else FairSpend.push({year,month,person:p,fair});
   });
 }
 
+// --- Семейные траты ---
 function updateFamilyExpense(){
-  const manualTotal = +document.getElementById("manual-total").value || 0;
-  let personalSum = 0;
-  document.querySelectorAll('#personalExpenses .personal-expense').forEach(e=>personalSum+=+e.value||0);
-  let userFamilyExpense = manualTotal-personalSum;
-  document.getElementById('familyExpenseBlock').textContent = `Семейные траты: ${userFamilyExpense.toFixed(2)} €`;
+  const manualTotal = +document.getElementById("manual-total").value||0;
+  const personalSum = Array.from(document.querySelectorAll('#personalExpenses .personal-expense')).reduce((a,b)=>a+(+b.value||0),0);
+  document.getElementById('familyExpenseBlock').textContent = `Семейные траты: ${(manualTotal-personalSum).toFixed(2)} €`;
 }
 
+// --- Загрузка данных ---
 function loadData(){
-  const year = +document.getElementById("yearSelect").value;
-  const month = document.getElementById("monthSelect").selectedIndex+1;
+  const year=+document.getElementById("yearSelect").value;
+  const month=document.getElementById("monthSelect").selectedIndex+1;
 
   initIncomeFields();
   initPersonalExpenses();
   initExtraExpenses();
 
-  let startCash = TotalCash[currentPerson][month] || (TotalCash[currentPerson][month-1] || 0);
-  document.getElementById("cashAvailable").value = startCash;
+  let startCash = TotalCash[currentPerson]?.[month]||0;
+  document.getElementById("cashAvailable").value=startCash;
 
-  const incomeDivs = document.querySelectorAll('#incomeFields div');
+  // Доходы
+  const incomeDivs=document.querySelectorAll('#incomeFields div');
   Income.filter(r=>r.year===year && r.month===month && r.person===currentPerson).forEach((inc,i)=>{
     if(incomeDivs[i]){
-      incomeDivs[i].querySelector('.income-source').value = inc.source;
-      incomeDivs[i].querySelector('.income-amount').value = inc.amount;
-      incomeDivs[i].querySelector('.income-type').value = inc.type;
+      incomeDivs[i].querySelector('.income-source').value=inc.source;
+      incomeDivs[i].querySelector('.income-amount').value=inc.amount;
+      incomeDivs[i].querySelector('.income-type').value=inc.type;
     }
   });
 
+  // Расходы
   const manual = Payable.find(r=>r.year===year && r.month===month && r.person===currentPerson && r.type==='manualTotal');
   document.getElementById("manual-total").value = manual?.amount || 0;
-
-  // Индивидуальные
-  let personalLines = document.querySelectorAll('#personalExpenses div');
-  Payable.filter(r=>r.year===year && r.month===month && r.person===currentPerson && r.type==='personal').forEach((p,i)=>{
-    if(personalLines[i]){
-      personalLines[i].querySelector('.personal-expense').value = p.amount;
-      if(i<5) personalLines[i].querySelector('select').value=p.comment;
-      else personalLines[i].querySelector('input').value=p.comment;
-    }
+  const personal = Payable.filter(r=>r.year===year && r.month===month && r.person===currentPerson && r.type==='personal');
+  personal.forEach((p,i)=>{
+    const div=document.querySelectorAll('#personalExpenses div')[i];
+    if(div) {div.querySelector('.personal-expense').value=p.amount; div.querySelector('select,input').value=p.comment;}
   });
 
   attachInputListeners();
   saveData();
 }
 
+// --- Месячная статистика ---
 function updateMonthStats(){
-  const year = +document.getElementById("yearSelect").value;
-  const month = document.getElementById("monthSelect").selectedIndex+1;
+  const year=+document.getElementById("yearSelect").value;
+  const month=document.getElementById("monthSelect").selectedIndex+1;
+  const start = TotalCash[currentPerson]?.[month]||0;
+  document.getElementById("startCash").textContent=start.toFixed(2);
 
-  const startCash = TotalCash[currentPerson][month] || 0;
-  const incomesMonth = Income.filter(r=>r.year===year && r.month===month && r.person===currentPerson).reduce((a,b)=>a+b.amount,0);
-  const manualTotal = +document.getElementById("manual-total").value || 0;
-  const personalSum = document.querySelectorAll('#personalExpenses .personal-expense').length ?
-    Array.from(document.querySelectorAll('#personalExpenses .personal-expense')).reduce((a,b)=>a+(+b.value||0),0) : 0;
+  const userIncomeMonth = Income.filter(r=>r.year===year && r.month===month && r.person===currentPerson).reduce((a,b)=>a+b.amount,0);
+  const end = start + userIncomeMonth - (document.getElementById("manual-total").value||0);
+  document.getElementById("endCash").textContent=end.toFixed(2);
 
-  const endCash = startCash + incomesMonth - (manualTotal - personalSum);
-  document.getElementById("startCash").textContent = startCash.toFixed(2);
-  document.getElementById("endCash").textContent = endCash.toFixed(2);
-
-  const yearIncomeAll = Income.filter(r=>r.year===year).reduce((a,b)=>a+b.amount,0);
+  const totalIncomeYear = Income.filter(r=>r.year===year).reduce((a,b)=>a+b.amount,0);
   const userIncomeYear = Income.filter(r=>r.year===year && r.person===currentPerson).reduce((a,b)=>a+b.amount,0);
-  const percentIncome = yearIncomeAll? (userIncomeYear/yearIncomeAll*100) : 0;
-  document.getElementById("incomePercent").textContent = percentIncome.toFixed(2);
+  const incomePercent = totalIncomeYear? userIncomeYear/totalIncomeYear*100 : 0;
+  document.getElementById("incomePercent").textContent=incomePercent.toFixed(1);
 
-  const totalFamilyExpense = FamilyMembers.reduce((sum,p)=>{
-    const manual = Payable.find(r=>r.year===year && r.month===month && r.person===p && r.type==='manualTotal')?.amount||0;
-    const personal = Payable.filter(r=>r.year===year && r.month===month && r.person===p && r.type==='personal').reduce((a,b)=>a+b.amount,0);
-    return sum + (manual-personal);
-  },0);
-  document.getElementById("totalFamilyExpense").textContent = totalFamilyExpense.toFixed(2);
+  const fair = FairSpend.find(f=>f.year===year && f.month===month && f.person===currentPerson)?.fair||0;
+  document.getElementById("fairExpense").textContent=fair.toFixed(2);
 
-  const fair = FairSpend.find(f=>f.year===year && f.month===month && f.person===currentPerson)?.fair || 0;
-  document.getElementById("fairExpense").textContent = fair.toFixed(2);
+  const manualTotal = +document.getElementById("manual-total").value||0;
+  const personalSum = Array.from(document.querySelectorAll('#personalExpenses .personal-expense')).reduce((a,b)=>a+(+b.value||0),0);
+  const totalFamilyExpense = manualTotal - personalSum;
+  document.getElementById("totalFamilyExpense").textContent=totalFamilyExpense.toFixed(2);
 
-  document.getElementById("diffExpense").textContent = (totalFamilyExpense-fair).toFixed(2);
+  document.getElementById("diffExpense").textContent=(totalFamilyExpense-fair).toFixed(2);
 }
 
+// --- Годовая статистика ---
 function updateStatistics(){
-  const statsYear = +document.getElementById("statsYearSelect").value;
+  const year=+document.getElementById("statsYearSelect").value;
   const container = document.getElementById("statisticsBlocks");
-  container.innerHTML = '';
+  container.innerHTML='';
+  let totalCashYear = 0, totalIncomeYear = 0, totalExpenseYear=0;
 
-  let totalCash = 0, totalIncome=0, totalExpense=0;
   FamilyMembers.forEach(p=>{
-    const userIncome = Income.filter(r=>r.year===statsYear && r.person===p).reduce((a,b)=>a+b.amount,0);
-    const userExpense = Payable.filter(r=>r.year===statsYear && r.person===p && r.type==='personal').reduce((a,b)=>a+b.amount,0) +
-                        Payable.filter(r=>r.year===statsYear && r.person===p && r.type==='manualTotal').reduce((a,b)=>a+b.amount,0);
-    totalIncome+=userIncome;
-    totalExpense+=userExpense;
-    const fair = FairSpend.find(f=>f.year===statsYear && f.person===p)?.fair || 0;
-    const diff = userExpense-fair;
+    const userIncome = Income.filter(r=>r.year===year && r.person===p).reduce((a,b)=>a+b.amount,0);
+    const userExpense = Payable.filter(r=>r.year===year && r.person===p).reduce((a,b)=>a+b.amount,0);
+    const fair = FairSpend.filter(f=>f.year===year && f.person===p).reduce((a,b)=>a+b.fair,0);
 
-    const div = document.createElement('div');
-    div.classList.add('stat-block');
-    div.innerHTML = `<b>${p}</b><br>Доход: ${userIncome.toFixed(2)}<br>Расход: ${userExpense.toFixed(2)}<br>Честная доля: ${fair.toFixed(2)}<br>Разница: ${diff.toFixed(2)}`;
-    container.appendChild(div);
+    container.innerHTML+=`<div class="stat-block">${p}<br>Доход: ${userIncome} €<br>Расход: ${userExpense} €<br>Честная доля: ${fair.toFixed(2)} €<br>Разница: ${(userExpense-fair).toFixed(2)} €</div>`;
+
+    totalIncomeYear+=userIncome;
+    totalExpenseYear+=userExpense;
   });
-
-  const totalDiv = document.createElement('div');
-  totalDiv.classList.add('stat-block');
-  totalDiv.innerHTML = `<b>Всего семья</b><br>Общий доход: ${totalIncome.toFixed(2)}<br>Общий расход: ${totalExpense.toFixed(2)}<br>Средний доход: ${(totalIncome/FamilyMembers.length).toFixed(2)}<br>Средний расход: ${(totalExpense/FamilyMembers.length).toFixed(2)}`;
-  container.appendChild(totalDiv);
+  // можно добавить общий блок для семьи
 }
-
-// Инициализация
-initJanuary();
-selectPerson('me');
+window.onload=()=>{
+  initIncomeFields();
+  initPersonalExpenses();
+  initExtraExpenses();
+  attachInputListeners();
+  selectPerson('me');
+};
 </script>
 
 </body>
