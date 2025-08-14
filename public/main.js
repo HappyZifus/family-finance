@@ -1,61 +1,53 @@
 import { supabase } from './supabase/supabaseClient.js';
 
-let currentUserId = null;
-let currentMonth = new Date().getMonth() + 1;
+let currentPersonId = null;
 let currentYear = new Date().getFullYear();
+let currentMonth = 1;
 
-// Containers
-const personContainer = document.getElementById('personSelectors');
-const monthSelect = document.getElementById('monthSelect');
-const yearSelect = document.getElementById('yearSelect');
-const incomeContainer = document.getElementById('incomeList');
-const expenseContainer = document.getElementById('expenseList');
-const totalCashContainer = document.getElementById('totalCash');
-
+// Initialize
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadUsers();
+    await setupPersonSelectors();
     setupMonthYearSelectors();
 });
 
-// Load users and create buttons
-async function loadUsers() {
-    const { data: users, error } = await supabase
-        .from('users')
-        .select('id, name');
+async function setupPersonSelectors() {
+    const { data: users, error } = await supabase.from('users').select('id,name');
 
     if (error) {
-        console.error('Error fetching users:', error.message);
+        console.error('Error fetching users:', error);
         return;
     }
 
-    personContainer.innerHTML = '';
+    const container = document.getElementById('personSelectors');
+    container.innerHTML = '';
+
     users.forEach(user => {
         const btn = document.createElement('div');
-        btn.className = 'selector-block';
+        btn.classList.add('selector-block');
         btn.textContent = user.name;
         btn.dataset.userId = user.id;
-        btn.addEventListener('click', () => selectUser(user.id, btn));
-        personContainer.appendChild(btn);
+
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.selector-block').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentPersonId = user.id;
+            loadData();
+        });
+
+        container.appendChild(btn);
     });
 
-    // Select first user by default
-    if (users.length > 0) selectUser(users[0].id, personContainer.firstChild);
+    // Automatically select first person
+    if (users.length > 0) {
+        currentPersonId = users[0].id;
+        container.firstChild.classList.add('active');
+        loadData();
+    }
 }
 
-// Handle user selection
-function selectUser(userId, btn) {
-    currentUserId = userId;
-    // Highlight
-    personContainer.querySelectorAll('.selector-block').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    // Load data
-    loadData();
-}
-
-// Setup month/year selectors
 function setupMonthYearSelectors() {
-    monthSelect.value = currentMonth;
-    yearSelect.value = currentYear;
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
 
     monthSelect.addEventListener('change', () => {
         currentMonth = parseInt(monthSelect.value);
@@ -68,68 +60,51 @@ function setupMonthYearSelectors() {
     });
 }
 
-// Load income and expenses
 async function loadData() {
-    if (!currentUserId) return;
+    if (!currentPersonId) return;
 
-    // Income
-    const { data: incomes, error: incomeError } = await supabase
+    console.log(`Loading data for user ${currentPersonId}, ${currentMonth}/${currentYear}`);
+
+    const { data: incomeData, error: incomeError } = await supabase
         .from('income')
         .select('*')
-        .eq('user_id', currentUserId)
-        .eq('month', currentMonth)
-        .eq('year', currentYear);
+        .eq('user_id', currentPersonId)
+        .eq('year', currentYear)
+        .eq('month', currentMonth);
 
-    if (incomeError) {
-        console.error('Income fetch error:', incomeError.message);
-        return;
-    }
+    if (incomeError) console.error(incomeError);
 
-    // Expenses
-    const { data: expenses, error: expenseError } = await supabase
+    const { data: expenseData, error: expenseError } = await supabase
         .from('expenses')
         .select('*')
-        .eq('user_id', currentUserId)
-        .eq('month', currentMonth)
-        .eq('year', currentYear);
+        .eq('user_id', currentPersonId)
+        .eq('year', currentYear)
+        .eq('month', currentMonth);
 
-    if (expenseError) {
-        console.error('Expenses fetch error:', expenseError.message);
-        return;
-    }
+    if (expenseError) console.error(expenseError);
 
-    renderIncome(incomes);
-    renderExpenses(expenses);
-    renderTotals(incomes, expenses);
+    renderIncome(incomeData || []);
+    renderExpenses(expenseData || []);
 }
 
-// Render income
-function renderIncome(incomes) {
-    incomeContainer.innerHTML = '';
-    incomes.forEach(i => {
+function renderIncome(items) {
+    const container = document.getElementById('incomeList');
+    container.innerHTML = '';
+    items.forEach(i => {
         const div = document.createElement('div');
         div.className = 'income-item';
         div.textContent = `${i.source}: ${i.amount}`;
-        incomeContainer.appendChild(div);
+        container.appendChild(div);
     });
 }
 
-// Render expenses
-function renderExpenses(expenses) {
-    expenseContainer.innerHTML = '';
-    expenses.forEach(e => {
+function renderExpenses(items) {
+    const container = document.getElementById('expenseList');
+    container.innerHTML = '';
+    items.forEach(i => {
         const div = document.createElement('div');
         div.className = 'expense-item';
-        div.textContent = `${e.type}: ${e.amount}`;
-        expenseContainer.appendChild(div);
+        div.textContent = `${i.type}: ${i.amount}`;
+        container.appendChild(div);
     });
-}
-
-// Render totals
-function renderTotals(incomes, expenses) {
-    const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
-    const totalExpense = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
-    const endCash = totalIncome - totalExpense;
-
-    totalCashContainer.textContent = `Total Cash: ${endCash.toFixed(2)}`;
 }
