@@ -1,67 +1,39 @@
 body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background-color: #f5f5f5;
+  font-family: Arial, sans-serif;
+  padding: 20px;
 }
 
-header h1 {
-    text-align: center;
-    margin-bottom: 30px;
+header {
+  margin-bottom: 20px;
 }
 
-.top-selectors {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 15px;
+.selectors {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
 }
 
-.selector-block {
-    padding: 10px 20px;
-    background-color: #ddd;
-    border-radius: 5px;
-    cursor: pointer;
-    user-select: none;
-    transition: background-color 0.2s;
+button.person-btn {
+  padding: 5px 10px;
+  cursor: pointer;
+  border: 1px solid #333;
+  background-color: #fff;
 }
 
-.selector-block:hover {
-    background-color: #ccc;
-}
-
-.selector-block.active {
-    background-color: #4caf50;
-    color: white;
-}
-
-.month-year-selectors {
-    display: flex;
-    gap: 15px;
-    align-items: center;
-    margin-bottom: 20px;
+button.person-btn.active {
+  background-color: #333;
+  color: #fff;
 }
 
 section {
-    background-color: white;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  margin-top: 20px;
+  border-top: 1px solid #ccc;
+  padding-top: 10px;
 }
 
-h2 {
-    margin-top: 0;
-}
-
-.income-item, .expense-item {
-    padding: 8px;
-    border-bottom: 1px solid #eee;
-}
-
-.income-item:last-child, .expense-item:last-child {
-    border-bottom: none;
-}
-
-#totalCash {
-    font-weight: bold;
-    font-size: 1.2em;
+#incomeList div,
+#expenseList div {
+  margin-bottom: 5px;
+  padding: 5px;
+  border-bottom: 1px solid #eee;
 }
