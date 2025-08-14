@@ -19,13 +19,12 @@ async function loadPersons() {
     .select('*')
     .order('idx', { ascending: true });
 
-  if (error) {
-    console.error('Error loading users:', error);
-    return;
-  }
+  console.log('Users fetched from Supabase:', users, 'Error:', error);
+
+  if (error) return;
 
   if (!users || users.length === 0) {
-    console.log('No users found in database.');
+    console.log('No users found.');
     return;
   }
 
@@ -48,8 +47,9 @@ async function loadPersons() {
     container.appendChild(btn);
   });
 
-  container.firstChild.click(); // select first user by default
+  container.firstChild.click();
 }
+
 
 function populateMonthYearSelectors() {
   const monthSelect = document.getElementById('monthSelect');
