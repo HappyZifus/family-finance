@@ -96,9 +96,63 @@ function attachInputListeners(){
   document.querySelectorAll('#incomeFields input, #personalExpenses input, #personalExpenses select, #extraExpenses input, #extraExpenses select, #manual-total')
     .forEach(input=>input.addEventListener('input', saveData));
 }
+async function saveDataToSupabase() {
+  const year = +document.getElementById("yearSelect").value;
+  const month = document.getElementById("monthSelect").selectedIndex + 1;
+
+  // --- Доходы ---
+  for (const incDiv of document.querySelectorAll('#incomeFields .income-line')) {
+    const source = incDiv.querySelector('.income-source').value;
+    const amount = +incDiv.querySelector('.income-amount').value || 0;
+    const type = +incDiv.querySelector('.income-type').value;
+
+    if (!source) continue;
+
+    // Проверка, есть ли запись
+    const existing = Income.find(r => r.year === year && r.month === month && r.person === currentPerson && r.source === source);
+    if (existing) {
+      // Обновляем в Supabase
+      await supabase.from('Income').update({ amount, type }).eq('id', existing.id);
+    } else {
+      // Вставляем новую запись
+      const { data, error } = await supabase.from('Income').insert([{ year, month, person: currentPerson, source, amount, type }]);
+      if (!error) Income.push(data[0]);
+    }
+  }
+
+  // --- Расходы ---
+  for (const expDiv of document.querySelectorAll('#personalExpenses .expense-line, #extraExpenses .extra-line')) {
+    const amount = +expDiv.querySelector('input').value || 0;
+    const commentInput = expDiv.querySelector('select, input');
+    const comment = commentInput ? commentInput.value : '';
+    const type = expDiv.closest('#personalExpenses') ? 'personal' : 'extra';
+
+    if (amount === 0 && !comment) continue;
+
+    const existing = Payable.find(r => r.year === year && r.month === month && r.person === currentPerson && r.type === type && r.comment === comment);
+    if (existing) {
+      await supabase.from('Payable').update({ amount }).eq('id', existing.id);
+    } else {
+      const { data, error } = await supabase.from('Payable').insert([{ year, month, person: currentPerson, type, amount, comment }]);
+      if (!error) Payable.push(data[0]);
+    }
+  }
+
+  // --- Наличные ---
+  const startCash = +document.getElementById('cashAvailable').value || 0;
+  if (!TotalCash[currentPerson]) TotalCash[currentPerson] = {};
+  TotalCash[currentPerson][month] = startCash;
+
+  const existingCash = (await supabase.from('TotalCash').select('*').eq('year', year).eq('month', month).eq('person', currentPerson)).data[0];
+  if (existingCash) {
+    await supabase.from('TotalCash').update({ amount: startCash }).eq('id', existingCash.id);
+  } else {
+    await supabase.from('TotalCash').insert([{ year, month, person: currentPerson, amount: startCash }]);
+  }
+}
 
 // --- Сохранение данных ---
-async function saveData(){
+async function saveDataLocal(){
   const year = +document.getElementById("yearSelect").value;
   const month = document.getElementById("monthSelect").selectedIndex+1;
 
