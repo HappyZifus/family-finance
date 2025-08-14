@@ -1,41 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Family Finance</title>
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <title>Family Finance</title>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <header>
+        <h1>Family Finance Dashboard</h1>
+    </header>
 
-<header>Family Finance</header>
+    <!-- Top Selectors -->
+    <section id="topSelectors">
+        <div class="top-selectors">
+            <div class="selector-block" id="personMe" data-name="Lesha">Lesha</div>
+            <div class="selector-block" id="personWife" data-name="Lena">Lena</div>
+        </div>
 
-<div id="userSelectors">
-    <button class="user-btn" data-name="Lesha">Lesha</button>
-    <button class="user-btn" data-name="Lena">Lena</button>
-</div>
+        <div class="month-year-selectors">
+            <label for="monthSelect">Month:</label>
+            <select id="monthSelect">
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+            </select>
 
-<div id="dateSelectors">
-    Year: <select id="yearSelect"><option>2025</option><option>2026</option></select>
-    Month: <select id="monthSelect">
-        <option value="1">Jan</option><option value="2">Feb</option><option value="3">Mar</option>
-        <option value="4">Apr</option><option value="5">May</option><option value="6">Jun</option>
-        <option value="7">Jul</option><option value="8">Aug</option><option value="9">Sep</option>
-        <option value="10">Oct</option><option value="11">Nov</option><option value="12">Dec</option>
-    </select>
-</div>
+            <label for="yearSelect">Year:</label>
+            <select id="yearSelect">
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+            </select>
+        </div>
+    </section>
 
-<div id="dataSection">
-    <div id="incomeBlock">
-        <h3>Income</h3>
-        <div id="incomeList"></div>
-    </div>
-
-    <div id="expenseBlock">
-        <h3>Expenses</h3>
-        <div id="expenseList"></div>
-    </div>
-</div>
-
-<script type="module" src="main.js"></script>
-</body>
-</html>
+    <!-- Income Section -->
+    <sec
