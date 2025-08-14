@@ -25,3 +25,13 @@ header { height: 60px; background: #3a6ea5; color: white; display: flex; align-i
 #cashAvailableDiv input { flex:1; padding:6px; }
 #correctionDiv { display:flex; gap:5px; align-items:center; margin-bottom:10px; }
 #correctionDiv input { flex:1; padding:6px; }
+/* Контейнеры статистики — раскладка карточек */
+#monthStats,
+#statisticsBlocks {
+  display: flex;
+  justify-content: space-between;
+  margin: 10px 20px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
