@@ -1,13 +1,12 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-// Replace with your Supabase URL and key
 const supabaseUrl = 'https://mlkkehhdymhqctxlioov.supabase.co';
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sa2tlaGhkeW1ocWN0eGxpb292Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxNTczMzYsImV4cCI6MjA3MDczMzMzNn0.zE3B0Awm6eS3Gw7WdCu8MlsMJf8tqIkQo4ADiEzKi1o';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 let currentPersonId = null;
 let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth() + 1; // JS month is 0-indexed
+let currentMonth = new Date().getMonth() + 1;
 
 document.addEventListener('DOMContentLoaded', async () => {
   await loadPersons();
@@ -22,6 +21,11 @@ async function loadPersons() {
 
   if (error) {
     console.error('Error loading users:', error);
+    return;
+  }
+
+  if (!users || users.length === 0) {
+    console.log('No users found in database.');
     return;
   }
 
@@ -44,10 +48,7 @@ async function loadPersons() {
     container.appendChild(btn);
   });
 
-  // Select first user by default
-  if (users.length) {
-    container.firstChild.click();
-  }
+  container.firstChild.click(); // select first user by default
 }
 
 function populateMonthYearSelectors() {
@@ -87,25 +88,19 @@ function populateMonthYearSelectors() {
 async function loadData() {
   if (!currentPersonId) return;
 
-  // Fetch income
-  const { data: income, error: incomeError } = await supabase
+  const { data: income } = await supabase
     .from('income')
     .select('*')
     .eq('user_id', currentPersonId)
     .eq('year', currentYear)
     .eq('month', currentMonth);
 
-  if (incomeError) console.error('Income fetch error:', incomeError);
-
-  // Fetch expenses
-  const { data: expenses, error: expenseError } = await supabase
+  const { data: expenses } = await supabase
     .from('expenses')
     .select('*')
     .eq('user_id', currentPersonId)
     .eq('year', currentYear)
     .eq('month', currentMonth);
-
-  if (expenseError) console.error('Expenses fetch error:', expenseError);
 
   renderIncome(income || []);
   renderExpenses(expenses || []);
