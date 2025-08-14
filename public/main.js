@@ -1,91 +1,113 @@
-import { supabase } from '../supabase/supabaseClient.js';
+import { supabase } from './supabase/supabaseClient.js';
 
-let currentPerson = 'me';
-const FamilyMembers = ['me','wife'];
-let FairSpend = [];
-
-document.getElementById('personMe').addEventListener('click',()=>selectPerson('me'));
-document.getElementById('personWife').addEventListener('click',()=>selectPerson('wife'));
-document.getElementById('yearSelect').addEventListener('change', loadData);
-document.getElementById('monthSelect').addEventListener('change', loadData);
-
-async function selectPerson(person){
-    currentPerson = person;
-    document.getElementById('personMe').classList.toggle('active', person==='me');
-    document.getElementById('personWife').classList.toggle('active', person==='wife');
-    await loadData();
-}
-
-function createIncomeLine(source='', amount=0, type=0){
-    const div = document.createElement('div');
-    div.className='income-line';
-    div.innerHTML = `
-        <input type="text" class="income-source" placeholder="Источник" value="${source}">
-        <input type="number" class="income-amount" placeholder="Сумма (€)" value="${amount}">
-        <input type="range" class="income-type" min="0" max="1" step="1" value="${type}">
-    `;
-    document.getElementById('incomeFields').appendChild(div);
-}
-
-async function loadIncome(person, year, month){
-    const { data, error } = await supabase
-        .from('Income')
-        .select('*')
-        .eq('person', person)
-        .eq('year', year)
-        .eq('month', month);
-    if(error) console.error(error);
-    return data || [];
-}
-
-async function loadCash(person, month){
-    const { data, error } = await supabase
-        .from('Cash')
-        .select('amount')
-        .eq('person', person)
-        .eq('month', month)
-        .single();
-    if(error) console.warn(error);
-    return data?.amount || 0;
-}
-
-async function loadData(){
-    document.getElementById('incomeFields').innerHTML='';
-    const year = +document.getElementById('yearSelect').value;
-    const month = +document.getElementById('monthSelect').value;
-
-    // доходы
-    const income = await loadIncome(currentPerson, year, month);
-    if(income.length===0) createIncomeLine();
-    income.forEach(inc => createIncomeLine(inc.source, inc.amount, inc.type));
-
-    // наличные
-    const cash = await loadCash(currentPerson, month);
-    document.getElementById('cashAvailable').value = cash;
-
-    // TODO: расходы, FairSpend, endCash, статистика
-}
-
-createIncomeLine();
-
-selectPerson('me');
 let currentPerson = null;
 let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth() + 1; // 1–12
+let currentMonth = 1; // январь по умолчанию
 
-async function loadData() {
-    console.log(`Загрузка для ${currentPerson} — ${currentMonth}/${currentYear}`);
-    const income = await loadIncome(currentPerson, currentYear, currentMonth);
-    // здесь вставить вызовы функций по заполнению интерфейса доходов/расходов
+// Инициализация
+document.addEventListener('DOMContentLoaded', () => {
+    setupPersonSelectors();
+    setupMonthYearSelectors();
+    // по умолчанию выберем первого человека
+    const firstPerson = document.querySelector('.selector-block');
+    if (firstPerson) {
+        firstPerson.click();
+    }
+});
+
+function setupPersonSelectors() {
+    const persons = document.querySelectorAll('.selector-block[id^="person"]');
+    persons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // снять выделение со всех
+            persons.forEach(b => b.classList.remove('active'));
+            // выделить текущего
+            btn.classList.add('active');
+            currentPerson = btn.textContent.trim();
+            console.log(`Выбран человек: ${currentPerson}`);
+            loadData();
+        });
+    });
 }
 
-document.querySelectorAll('.user-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        currentPerson = btn.dataset.person;
-        // визуальное выделение кнопки
-        document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        // загрузка данных
-        loadData();
+function setupMonthYearSelectors() {
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
+
+    if (monthSelect) {
+        monthSelect.addEventListener('change', () => {
+            currentMonth = parseInt(monthSelect.value);
+            console.log(`Месяц: ${currentMonth}`);
+            loadData();
+        });
+    }
+
+    if (yearSelect) {
+        yearSelect.addEventListener('change', () => {
+            currentYear = parseInt(yearSelect.value);
+            console.log(`Год: ${currentYear}`);
+            loadData();
+        });
+    }
+}
+
+async function loadData() {
+    if (!currentPerson || !currentYear || !currentMonth) return;
+
+    console.log(`Загрузка данных для ${currentPerson} — ${currentMonth}/${currentYear}`);
+
+    try {
+        const { data: incomeData, error: incomeError } = await supabase
+            .from('income')
+            .select('*')
+            .eq('person', currentPerson)
+            .eq('year', currentYear)
+            .eq('month', currentMonth);
+
+        if (incomeError) throw incomeError;
+
+        const { data: expenseData, error: expenseError } = await supabase
+            .from('expenses')
+            .select('*')
+            .eq('person', currentPerson)
+            .eq('year', currentYear)
+            .eq('month', currentMonth);
+
+        if (expenseError) throw expenseError;
+
+        console.log('Доходы:', incomeData);
+        console.log('Расходы:', expenseData);
+
+        renderIncome(incomeData);
+        renderExpenses(expenseData);
+
+    } catch (err) {
+        console.error('Ошибка загрузки данных:', err.message);
+    }
+}
+
+function renderIncome(incomeList) {
+    const incomeContainer = document.getElementById('incomeList');
+    if (!incomeContainer) return;
+    incomeContainer.innerHTML = '';
+
+    incomeList.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('income-item');
+        div.textContent = `${item.source}: ${item.amount}`;
+        incomeContainer.appendChild(div);
     });
-});
+}
+
+function renderExpenses(expenseList) {
+    const expenseContainer = document.getElementById('expenseList');
+    if (!expenseContainer) return;
+    expenseContainer.innerHTML = '';
+
+    expenseList.forEach(item => {
+        const div = document.createElement('div');
+        div.classList.add('expense-item');
+        div.textContent = `${item.category}: ${item.amount}`;
+        expenseContainer.appendChild(div);
+    });
+}
