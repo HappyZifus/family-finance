@@ -1,126 +1,135 @@
 import { supabase } from './supabase/supabaseClient.js';
 
-let currentPersonId = null;
-let currentPersonName = null;
+let currentUserId = null;
 let currentMonth = new Date().getMonth() + 1;
 let currentYear = new Date().getFullYear();
 
-document.addEventListener('DOMContentLoaded', () => {
-    fetchAndRenderUsers();
+// Containers
+const personContainer = document.getElementById('personSelectors');
+const monthSelect = document.getElementById('monthSelect');
+const yearSelect = document.getElementById('yearSelect');
+const incomeContainer = document.getElementById('incomeList');
+const expenseContainer = document.getElementById('expenseList');
+const totalCashContainer = document.getElementById('totalCash');
+
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadUsers();
     setupMonthYearSelectors();
 });
 
-// Fetch users and render buttons
-async function fetchAndRenderUsers() {
-    const { data: users, error } = await supabase.from('users').select('*');
-    if (error) return console.error(error);
+// Load users and create buttons
+async function loadUsers() {
+    const { data: users, error } = await supabase
+        .from('users')
+        .select('id, name');
 
-    console.log('Users fetched:', users);
+    if (error) {
+        console.error('Error fetching users:', error.message);
+        return;
+    }
 
-    const container = document.getElementById('personSelectors');
-    container.innerHTML = '';
-
+    personContainer.innerHTML = '';
     users.forEach(user => {
         const btn = document.createElement('div');
-        btn.classList.add('selector-block');
+        btn.className = 'selector-block';
         btn.textContent = user.name;
         btn.dataset.userId = user.id;
-
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.selector-block').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentPersonId = user.id;
-            currentPersonName = user.name;
-            console.log(`Selected person: ${currentPersonName} (${currentPersonId})`);
-            loadPersonData();
-        });
-
-        container.appendChild(btn);
+        btn.addEventListener('click', () => selectUser(user.id, btn));
+        personContainer.appendChild(btn);
     });
 
-    if (users.length > 0) container.firstChild.click();
+    // Select first user by default
+    if (users.length > 0) selectUser(users[0].id, personContainer.firstChild);
 }
 
-// Month/year dropdowns
+// Handle user selection
+function selectUser(userId, btn) {
+    currentUserId = userId;
+    // Highlight
+    personContainer.querySelectorAll('.selector-block').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Load data
+    loadData();
+}
+
+// Setup month/year selectors
 function setupMonthYearSelectors() {
-    const monthSelect = document.getElementById('monthSelect');
-    const yearSelect = document.getElementById('yearSelect');
-
-    for (let m = 1; m <= 12; m++) {
-        const opt = document.createElement('option');
-        opt.value = m;
-        opt.textContent = m;
-        if (m === currentMonth) opt.selected = true;
-        monthSelect.appendChild(opt);
-    }
-
-    const currentYearValue = new Date().getFullYear();
-    for (let y = currentYearValue - 1; y <= currentYearValue + 1; y++) {
-        const opt = document.createElement('option');
-        opt.value = y;
-        opt.textContent = y;
-        if (y === currentYear) opt.selected = true;
-        yearSelect.appendChild(opt);
-    }
+    monthSelect.value = currentMonth;
+    yearSelect.value = currentYear;
 
     monthSelect.addEventListener('change', () => {
         currentMonth = parseInt(monthSelect.value);
-        console.log('Month changed:', currentMonth);
-        loadPersonData();
+        loadData();
     });
 
     yearSelect.addEventListener('change', () => {
         currentYear = parseInt(yearSelect.value);
-        console.log('Year changed:', currentYear);
-        loadPersonData();
+        loadData();
     });
 }
 
-// Fetch person data
-async function loadPersonData() {
-    if (!currentPersonId) return;
+// Load income and expenses
+async function loadData() {
+    if (!currentUserId) return;
 
-    try {
-        const { data: incomeData, error: incomeError } = await supabase
-            .from('income')
-            .select('*')
-            .eq('user_id', currentPersonId)
-            .eq('month', currentMonth)
-            .eq('year', currentYear);
+    // Income
+    const { data: incomes, error: incomeError } = await supabase
+        .from('income')
+        .select('*')
+        .eq('user_id', currentUserId)
+        .eq('month', currentMonth)
+        .eq('year', currentYear);
 
-        const { data: expenseData, error: expenseError } = await supabase
-            .from('expenses')
-            .select('*')
-            .eq('user_id', currentPersonId)
-            .eq('month', currentMonth)
-            .eq('year', currentYear);
-
-        if (incomeError) console.error(incomeError);
-        if (expenseError) console.error(expenseError);
-
-        renderIncome(incomeData || []);
-        renderExpenses(expenseData || []);
-    } catch (err) {
-        console.error('Error loading data:', err);
+    if (incomeError) {
+        console.error('Income fetch error:', incomeError.message);
+        return;
     }
+
+    // Expenses
+    const { data: expenses, error: expenseError } = await supabase
+        .from('expenses')
+        .select('*')
+        .eq('user_id', currentUserId)
+        .eq('month', currentMonth)
+        .eq('year', currentYear);
+
+    if (expenseError) {
+        console.error('Expenses fetch error:', expenseError.message);
+        return;
+    }
+
+    renderIncome(incomes);
+    renderExpenses(expenses);
+    renderTotals(incomes, expenses);
 }
 
-function renderIncome(list) {
-    const container = document.getElementById('incomeList');
-    container.innerHTML = '<h3>Income</h3>';
-    list.forEach(item => {
+// Render income
+function renderIncome(incomes) {
+    incomeContainer.innerHTML = '';
+    incomes.forEach(i => {
         const div = document.createElement('div');
-        div.textContent = `${item.source}: ${item.amount}`;
-        container.appendChild(div);
+        div.className = 'income-item';
+        div.textContent = `${i.source}: ${i.amount}`;
+        incomeContainer.appendChild(div);
     });
 }
 
-function renderExpenses(list) {
-    const container = document.getElementById('expenseList');
-    container.innerHTML = '<h3>Expenses</h3>';
-    list.forEach(item => {
+// Render expenses
+function renderExpenses(expenses) {
+    expenseContainer.innerHTML = '';
+    expenses.forEach(e => {
         const div = document.createElement('div');
-        div.textContent = `${item.type}: ${item.amount}`;
-        container.appendChild(div);
+        div.className = 'expense-item';
+        div.textContent = `${e.type}: ${e.amount}`;
+        expenseContainer.appendChild(div);
     });
+}
+
+// Render totals
+function renderTotals(incomes, expenses) {
+    const totalIncome = incomes.reduce((sum, i) => sum + parseFloat(i.amount), 0);
+    const totalExpense = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+    const endCash = totalIncome - totalExpense;
+
+    totalCashContainer.textContent = `Total Cash: ${endCash.toFixed(2)}`;
 }
