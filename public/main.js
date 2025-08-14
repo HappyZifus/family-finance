@@ -5,39 +5,82 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 let currentPerson = null;
+let currentMonth = new Date().getMonth() + 1; // January = 1
+let currentYear = new Date().getFullYear();
 
 document.addEventListener('DOMContentLoaded', () => {
+    setupPersonSelectors();
+    setupMonthYearSelectors();
+    // select first person by default
+    const firstBtn = document.querySelector('.selector-block');
+    if (firstBtn) firstBtn.click();
+});
+
+function setupPersonSelectors() {
     const buttons = document.querySelectorAll('.selector-block');
     buttons.forEach(btn => {
         btn.addEventListener('click', async () => {
-            // Remove active from all
             buttons.forEach(b => b.classList.remove('active'));
-            // Add active to clicked
             btn.classList.add('active');
             currentPerson = btn.textContent.trim();
-            console.log('Selected person:', currentPerson);
-
-            // Load income and expenses for selected person
-            await loadData(currentPerson);
+            await loadData();
         });
     });
-});
+}
 
-async function loadData(person) {
-    if (!person) return;
+function setupMonthYearSelectors() {
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
+
+    // populate month
+    for (let m = 1; m <= 12; m++) {
+        const opt = document.createElement('option');
+        opt.value = m;
+        opt.textContent = m;
+        if (m === currentMonth) opt.selected = true;
+        monthSelect.appendChild(opt);
+    }
+
+    // populate year (last 5 years)
+    const current = new Date().getFullYear();
+    for (let y = current - 4; y <= current; y++) {
+        const opt = document.createElement('option');
+        opt.value = y;
+        opt.textContent = y;
+        if (y === currentYear) opt.selected = true;
+        yearSelect.appendChild(opt);
+    }
+
+    monthSelect.addEventListener('change', async () => {
+        currentMonth = parseInt(monthSelect.value);
+        await loadData();
+    });
+
+    yearSelect.addEventListener('change', async () => {
+        currentYear = parseInt(yearSelect.value);
+        await loadData();
+    });
+}
+
+async function loadData() {
+    if (!currentPerson) return;
 
     try {
         const { data: incomeData, error: incomeError } = await supabase
             .from('income')
             .select('*')
-            .eq('person', person);
+            .eq('person', currentPerson)
+            .eq('month', currentMonth)
+            .eq('year', currentYear);
 
         if (incomeError) throw incomeError;
 
         const { data: expenseData, error: expenseError } = await supabase
             .from('expenses')
             .select('*')
-            .eq('person', person);
+            .eq('person', currentPerson)
+            .eq('month', currentMonth)
+            .eq('year', currentYear);
 
         if (expenseError) throw expenseError;
 
