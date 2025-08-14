@@ -1,117 +1,124 @@
-import { supabase } from './supabaseClient.js';
+import { supabase } from './supabase/supabaseClient.js';
 
-let currentUserId = null;
-let currentMonth = new Date().getMonth() + 1;
+let currentPersonId = null;
 let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth() + 1; // 1-12
 
 document.addEventListener('DOMContentLoaded', async () => {
-    await loadUsers();
-    setupMonthYearSelectors();
+  await loadPersons();
+  setupMonthYearSelectors();
+  await loadData();
 });
 
-async function loadUsers() {
-    const { data: users, error } = await supabase
-        .from('users')
-        .select('id, name')
-        .order('name');
+async function loadPersons() {
+  const { data: users, error } = await supabase
+    .from('users')
+    .select('id, name');
 
-    if (error) {
-        console.error('Error fetching users:', error);
-        return;
-    }
+  if (error) {
+    console.error('Error fetching users:', error);
+    return;
+  }
 
-    const userContainer = document.getElementById('personSelectors');
-    userContainer.innerHTML = '';
+  const container = document.getElementById('personButtons');
+  container.innerHTML = '';
 
-    users.forEach(user => {
-        const btn = document.createElement('div');
-        btn.classList.add('selector-block');
-        btn.textContent = user.name;
-        btn.dataset.userId = user.id;
-
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.selector-block').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentUserId = user.id;
-            loadData();
-        });
-
-        userContainer.appendChild(btn);
+  users.forEach(user => {
+    const btn = document.createElement('button');
+    btn.textContent = user.name;
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#personButtons button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentPersonId = user.id;
+      loadData();
     });
+    container.appendChild(btn);
+  });
 
-    // Select first user by default
-    if (users.length > 0) {
-        currentUserId = users[0].id;
-        userContainer.firstChild.classList.add('active');
-        loadData();
-    }
+  // Select first user by default
+  if (users.length > 0) {
+    currentPersonId = users[0].id;
+    container.querySelector('button').classList.add('active');
+  }
 }
 
 function setupMonthYearSelectors() {
-    const monthSelect = document.getElementById('monthSelect');
-    const yearSelect = document.getElementById('yearSelect');
+  const yearSelect = document.getElementById('yearSelect');
+  const monthSelect = document.getElementById('monthSelect');
 
-    monthSelect.addEventListener('change', () => {
-        currentMonth = parseInt(monthSelect.value);
-        loadData();
-    });
+  // Populate year dropdown (last 5 years + current + next)
+  const thisYear = new Date().getFullYear();
+  for (let y = thisYear - 5; y <= thisYear + 1; y++) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if (y === currentYear) opt.selected = true;
+    yearSelect.appendChild(opt);
+  }
 
-    yearSelect.addEventListener('change', () => {
-        currentYear = parseInt(yearSelect.value);
-        loadData();
-    });
+  yearSelect.addEventListener('change', () => {
+    currentYear = parseInt(yearSelect.value);
+    loadData();
+  });
+
+  monthSelect.value = currentMonth;
+  monthSelect.addEventListener('change', () => {
+    currentMonth = parseInt(monthSelect.value);
+    loadData();
+  });
 }
 
 async function loadData() {
-    if (!currentUserId) return;
+  if (!currentPersonId) return;
 
-    try {
-        // Fetch income
-        const { data: income, error: incomeError } = await supabase
-            .from('income')
-            .select('*')
-            .eq('user_id', currentUserId)
-            .eq('month', currentMonth)
-            .eq('year', currentYear);
+  console.log(`Loading data for user ${currentPersonId}, ${currentMonth}/${currentYear}`);
 
-        if (incomeError) throw incomeError;
+  const { data: incomes, error: incomeErr } = await supabase
+    .from('income')
+    .select('*')
+    .eq('user_id', currentPersonId)
+    .eq('year', currentYear)
+    .eq('month', currentMonth);
 
-        // Fetch expenses
-        const { data: expenses, error: expenseError } = await supabase
-            .from('expenses')
-            .select('*')
-            .eq('user_id', currentUserId)
-            .eq('month', currentMonth)
-            .eq('year', currentYear);
+  if (incomeErr) console.error('Income fetch error:', incomeErr);
 
-        if (expenseError) throw expenseError;
+  const { data: expenses, error: expenseErr } = await supabase
+    .from('expenses')
+    .select('*')
+    .eq('user_id', currentPersonId)
+    .eq('year', currentYear)
+    .eq('month', currentMonth);
 
-        renderIncome(income);
-        renderExpenses(expenses);
+  if (expenseErr) console.error('Expense fetch error:', expenseErr);
 
-    } catch (err) {
-        console.error('Error loading data:', err);
-    }
+  renderIncome(incomes || []);
+  renderExpenses(expenses || []);
 }
 
-function renderIncome(incomeList) {
-    const container = document.getElementById('incomeList');
-    container.innerHTML = '';
-    incomeList.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'income-item';
-        div.textContent = `${item.source}: ${item.amount}`;
-        container.appendChild(div);
-    });
+function renderIncome(list) {
+  const container = document.getElementById('incomeList');
+  container.innerHTML = '';
+  if (list.length === 0) {
+    container.textContent = 'No income data.';
+    return;
+  }
+  list.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = `${item.source}: ${item.amount}`;
+    container.appendChild(div);
+  });
 }
 
-function renderExpenses(expenseList) {
-    const container = document.getElementById('expenseList');
-    container.innerHTML = '';
-    expenseList.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'expense-item';
-        div.textContent = `${item.type}: ${item.amount}`;
-        container.appendChild(div);
-    });
+function renderExpenses(list) {
+  const container = document.getElementById('expenseList');
+  container.innerHTML = '';
+  if (list.length === 0) {
+    container.textContent = 'No expense data.';
+    return;
+  }
+  list.forEach(item => {
+    const div = document.createElement('div');
+    div.textContent = `${item.type}: ${item.amount}`;
+    container.appendChild(div);
+  });
 }
