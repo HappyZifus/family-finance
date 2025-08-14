@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Семейные финансы</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header>Семейные финансы</header>
+
+<div id="auth">
+  <button id="loginGoogle">Войти через Google</button>
+  <span id="userEmail"></span>
+</div>
+
+<div id="monthStats"></div>
+
+<section id="input">
+  <div class="top-selectors">
+    <div class="selector-block" id="personMe">Леша</div>
+    <div class="selector-block" id="personWife">Лена</div>
+    <div class="selector-block">
+      <label>Год:</label>
+      <select id="yearSelect"></select>
+    </div>
+    <div class="selector-block">
+      <label>Месяц:</label>
+      <select id="monthSelect">
+        <option>Январь</option><option>Февраль</option><option>Март</option><option>Апрель</option>
+        <option>Май</option><option>Июнь</option><option>Июль</option><option>Август</option>
+        <option>Сентябрь</option><option>Октябрь</option><option>Ноябрь</option><option>Декабрь</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="headers">
+    <div>Доход</div>
+    <div>Расход</div>
+  </div>
+
+  <div class="input-blocks">
+    <div class="input-block" id="incomeBlock">
+      <div id="incomeFields"></div>
+      <button id="addIncome">Добавить доход</button>
+    </div>
+
+    <div class="input-block" id="expenseBlock">
+      <label>Общая сумма трат (€)</label>
+      <input type="number" id="manual-total" placeholder="Общая сумма трат">
+      <div id="familyExpenseBlock"></div>
+
+      <h4>Индивидуальные траты</h4>
+      <div id="personalExpenses"></div>
+
+      <h4>Дополнительные общие траты</h4>
+      <div id="extraExpenses"></div>
+    </div>
+  </div>
+</section>
+
+<section id="statistics">
+  <div id="statisticsBlocks"></div>
+</section>
+
+<script type="module" src="main.js"></script>
+</body>
+</html>
