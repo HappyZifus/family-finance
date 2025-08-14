@@ -1,53 +1,99 @@
+/* General page styling */
 body {
     font-family: Arial, sans-serif;
-    margin: 20px;
+    background-color: #f5f5f5;
+    margin: 0;
+    padding: 0;
 }
 
 header {
-    font-size: 24px;
-    font-weight: bold;
-    margin-bottom: 20px;
+    background-color: #4a90e2;
+    color: white;
+    padding: 20px;
+    text-align: center;
 }
 
-#userSelectors {
-    margin-bottom: 15px;
+h1 {
+    margin: 0;
 }
 
-.user-btn {
-    padding: 10px 20px;
-    margin-right: 10px;
-    border: 1px solid #333;
-    background-color: #f0f0f0;
-    cursor: pointer;
-    border-radius: 5px;
-}
-
-.user-btn.active {
-    background-color: #333;
-    color: #fff;
-}
-
-#dateSelectors {
-    margin-bottom: 20px;
-}
-
-#dataSection {
+/* Top selectors */
+.top-selectors {
     display: flex;
-    gap: 20px;
+    gap: 10px;
+    padding: 10px;
+    justify-content: center;
 }
 
-#incomeBlock, #expenseBlock {
-    flex: 1;
-    padding: 10px;
-    border: 1px solid #ddd;
+.selector-block {
+    padding: 10px 20px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color 0.2s;
+}
+
+.selector-block:hover {
+    background-color: #d0d0d0;
+}
+
+.selector-block.active {
+    background-color: #4a90e2;
+    color: white;
+    font-weight: bold;
+}
+
+/* Month and Year selectors */
+.month-year-selectors {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+}
+
+select {
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+}
+
+/* Sections */
+section {
+    margin: 20px auto;
+    width: 90%;
+    max-width: 800px;
+    background-color: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0px 2px 8px rgba(0,0,0,0.1);
+}
+
+section h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+/* List containers */
+.list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+/* Individual items */
+.income-item, .expense-item {
+    padding: 8px 12px;
+    background-color: #f0f0f0;
     border-radius: 5px;
 }
 
-h3 {
-    margin-top: 0;
+.income-item {
+    border-left: 5px solid #4caf50;
 }
 
-.income-item, .expense-item {
-    padding: 5px 0;
-    border-bottom: 1px solid #eee;
+.expense-item {
+    border-left: 5px solid #f44336;
 }
