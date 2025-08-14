@@ -1,4 +1,4 @@
-import { supabase } from '.supabase/supabaseClient.js';
+import { supabase } from './supabaseClient.js';
 
 let currentPerson = 'me';
 let FamilyMembers = ['me','wife'];
@@ -116,7 +116,7 @@ async function saveDataToSupabase() {
     } else {
       // Вставляем новую запись
       const { data, error } = await supabase.from('Income').insert([{ year, month, person: currentPerson, source, amount, type }]);
-      if (!error) loadDataFromDB(+yearSelect.value, monthSelect.selectedIndex+1, currentPerson);
+      if (!error) Income.push(data[0]);
     }
   }
 
@@ -134,7 +134,7 @@ async function saveDataToSupabase() {
       await supabase.from('Payable').update({ amount }).eq('id', existing.id);
     } else {
       const { data, error } = await supabase.from('Payable').insert([{ year, month, person: currentPerson, type, amount, comment }]);
-      if (!error) loadDataFromDB(+yearSelect.value, monthSelect.selectedIndex+1, currentPerson);
+      if (!error) Payable.push(data[0]);
     }
   }
 
@@ -342,63 +342,6 @@ async function updateStatistics(){
   container.innerHTML = `<div class="stat-block">Общий остаток семьи: ${totalEndCash.toFixed(2)} €</div>
                          <div class="stat-block">Средний доход семьи: ${(totalIncome/12).toFixed(2)} €</div>
                          <div class="stat-block">Средний расход семьи: ${(totalExpense/12).toFixed(2)} €</div>` + container.innerHTML;
-}
-
-import { supabase } from './supabase/supabaseClient.js';
-
-async function loadDataFromDB(year, month, currentPerson) {
-    // Загрузка доходов
-    const { data: incomeData, error: incomeError } = await supabase
-        .from('Income')
-        .select('*')
-        .eq('year', year)
-        .eq('month', month)
-        .eq('person', currentPerson);
-
-    if (incomeError) {
-        console.error('Ошибка загрузки доходов:', incomeError);
-        return;
-    }
-
-    Income = incomeData || [];
-
-    // Загрузка расходов
-    const { data: payableData, error: payableError } = await supabase
-        .from('Payable')
-        .select('*')
-        .eq('year', year)
-        .eq('month', month)
-        .eq('person', currentPerson);
-
-    if (payableError) {
-        console.error('Ошибка загрузки расходов:', payableError);
-        return;
-    }
-
-    Payable = payableData || [];
-
-    // Загрузка наличных
-    const { data: cashData, error: cashError } = await supabase
-        .from('TotalCash')
-        .select('*')
-        .eq('year', year)
-        .eq('month', month)
-        .eq('person', currentPerson);
-
-    if (cashError) {
-        console.error('Ошибка загрузки наличности:', cashError);
-        return;
-    }
-
-    TotalCash[currentPerson] = {};
-    if (cashData.length > 0) {
-        TotalCash[currentPerson][month] = cashData[0].amount;
-    } else {
-        TotalCash[currentPerson][month] = 0;
-    }
-
-    // После загрузки подгружаем данные в интерфейс
-    loadData();
 }
 
 // --- Запуск ---
