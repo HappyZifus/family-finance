@@ -1,56 +1,295 @@
-import { supabase } from '../supabase/supabaseClient.js'
+import { supabase } from './supabaseClient.js';
 
-let currentUser = null
-let currentPerson = 'me'
-const FamilyMembers = ['me','wife']
+let currentPerson = 'me';
+let FamilyMembers = ['me','wife'];
+let standardComments = ["Voldo Fuel","Volvo Servis","Vadaks utilities","Pension fond","Vadaks Serviss"];
 
-// --- Авторизация ---
-document.getElementById('loginGoogle').addEventListener('click', async ()=>{
-  const { data, error } = await supabase.auth.signInWithOAuth({ provider:'google' })
-  if(error) console.error(error)
-})
+// --- Инициализация интерфейса ---
+function initInterface(){
+  document.getElementById('personMe').addEventListener('click',()=>selectPerson('me'));
+  document.getElementById('personWife').addEventListener('click',()=>selectPerson('wife'));
+  document.getElementById("yearSelect").addEventListener('change', loadData);
+  document.getElementById("monthSelect").addEventListener('change', loadData);
+  document.getElementById("statsYearSelect").addEventListener('change', updateStatistics);
+  document.getElementById("applyCorrection").addEventListener('click', applyCorrection);
+  document.getElementById("addIncome").addEventListener('click',()=>{ initIncomeFields(); attachInputListeners(); });
+}
 
-supabase.auth.onAuthStateChange((event, session)=>{
-  if(session?.user){
-    currentUser = session.user
-    document.getElementById('userEmail').textContent = currentUser.email
-    loadData()
-  }
-})
-
-// --- Селекторы пользователя ---
-document.getElementById('personMe').addEventListener('click', ()=>selectPerson('me'))
-document.getElementById('personWife').addEventListener('click', ()=>selectPerson('wife'))
+// --- Выбор пользователя ---
 function selectPerson(person){
-  currentPerson = person
-  document.getElementById('personMe').classList.toggle('active', person==='me')
-  document.getElementById('personWife').classList.toggle('active', person==='wife')
-  loadData()
+  currentPerson = person;
+  document.getElementById('personMe').classList.toggle('active', person==='me');
+  document.getElementById('personWife').classList.toggle('active', person==='wife');
+  loadData();
 }
 
-// --- Загрузка данных и обновление UI ---
+// --- Поля доходов и расходов ---
+function initIncomeFields(){
+  const container = document.getElementById("incomeFields");
+  container.innerHTML='';
+  for(let i=0;i<3;i++){
+    const div = document.createElement('div');
+    div.classList.add('income-line');
+    div.innerHTML = `<input type="text" class="income-source" placeholder="Источник">
+                     <input type="number" class="income-amount" placeholder="Сумма (€)">
+                     <input type="range" class="income-type" min="0" max="1" step="1">`;
+    container.appendChild(div);
+  }
+}
+function initPersonalExpenses(){
+  const container = document.getElementById("personalExpenses");
+  container.innerHTML='';
+  for(let i=0;i<10;i++){
+    const div = document.createElement('div');
+    div.classList.add('expense-line');
+    if(i<5){
+      div.innerHTML = `<input type="number" class="personal-expense individual-expense" placeholder="Индивидуальная трата (€)">
+                       <select class="personal-comment comment-black"><option value="">--</option>${standardComments.map(c=>`<option>${c}</option>`).join('')}</select>`;
+    } else {
+      div.innerHTML = `<input type="number" class="personal-expense individual-expense" placeholder="Индивидуальная трата (€)">
+                       <input type="text" class="personal-comment" placeholder="Комментарий">`;
+    }
+    container.appendChild(div);
+  }
+}
+function initExtraExpenses(){
+  const container = document.getElementById("extraExpenses");
+  container.innerHTML='';
+  for(let i=0;i<10;i++){
+    const div = document.createElement('div');
+    div.classList.add('extra-line');
+    if(i<5){
+      div.innerHTML = `<input type="number" class="extra-expense" placeholder="Сумма (€)">
+                       <select class="extra-comment comment-black"><option value="">--</option>${standardComments.map(c=>`<option>${c}</option>`).join('')}</select>`;
+    } else {
+      div.innerHTML = `<input type="number" class="extra-expense" placeholder="Сумма (€)">
+                       <input type="text" class="extra-comment" placeholder="Комментарий">`;
+    }
+    container.appendChild(div);
+  }
+}
+
+// --- Применение корректировки наличности ---
+async function applyCorrection(){
+  let val = +document.getElementById("correctionValue").value || 0;
+  const year = +document.getElementById("yearSelect").value;
+  const month = document.getElementById("monthSelect").selectedIndex+1;
+
+  let { data: existing } = await supabase
+    .from('total_cash')
+    .select('*')
+    .eq('person', currentPerson)
+    .eq('year', year)
+    .eq('month', month);
+
+  if(existing.length>0){
+    await supabase.from('total_cash').update({cash: existing[0].cash+val})
+      .eq('id', existing[0].id);
+  } else {
+    await supabase.from('total_cash').insert([{person:currentPerson, year, month, cash:val}]);
+  }
+  loadData();
+}
+
+// --- Слушатели полей ---
+function attachInputListeners(){
+  document.querySelectorAll('#incomeFields input, #personalExpenses input, #personalExpenses select, #extraExpenses input, #extraExpenses select, #manual-total')
+    .forEach(input=>input.addEventListener('input', saveData));
+}
+
+// --- Сохранение данных ---
+async function saveData(){
+  const year = +document.getElementById("yearSelect").value;
+  const month = document.getElementById("monthSelect").selectedIndex+1;
+
+  // Доходы
+  const incomeDivs = document.querySelectorAll('#incomeFields div');
+  for(let div of incomeDivs){
+    const source = div.querySelector('.income-source').value;
+    const amount = +div.querySelector('.income-amount').value || 0;
+    const type = +div.querySelector('.income-type').value;
+    if(source){
+      let { data: exist } = await supabase
+        .from('income')
+        .select('*')
+        .eq('person', currentPerson)
+        .eq('year', year)
+        .eq('month', month)
+        .eq('source', source);
+      if(exist.length>0){
+        await supabase.from('income').update({amount,type}).eq('id', exist[0].id);
+      } else {
+        await supabase.from('income').insert([{person:currentPerson,year,month,source,amount,type}]);
+      }
+    }
+  }
+
+  // Расходы
+  const manualTotal = +document.getElementById("manual-total").value || 0;
+  await supabase.from('payable').delete()
+    .eq('person',currentPerson).eq('year',year).eq('month',month);
+  await supabase.from('payable').insert([{person:currentPerson,year,month,type:'manualTotal',amount:manualTotal}]);
+
+  const personalDivs = document.querySelectorAll('#personalExpenses div');
+  for(let i=0;i<personalDivs.length;i++){
+    const div = personalDivs[i];
+    const amount = +div.querySelector('.personal-expense').value || 0;
+    let comment = i<5 ? div.querySelector('select').value : div.querySelector('input').value;
+    if(amount>0 || comment){
+      await supabase.from('payable').insert([{person:currentPerson,year,month,type:'personal',amount,comment}]);
+    }
+  }
+
+  const extraDivs = document.querySelectorAll('#extraExpenses div');
+  for(let i=0;i<extraDivs.length;i++){
+    const div = extraDivs[i];
+    const amount = +div.querySelector('.extra-expense').value || 0;
+    let comment = i<5 ? div.querySelector('select').value : div.querySelector('input').value;
+    if(amount>0 || comment){
+      await supabase.from('payable').insert([{person:currentPerson,year,month,type:'extra',amount,comment}]);
+    }
+  }
+
+  updateStatistics();
+  updateMonthStats();
+}
+
+// --- Загрузка данных ---
 async function loadData(){
-  if(!currentUser) return
+  const year = +document.getElementById("yearSelect").value;
+  const month = document.getElementById("monthSelect").selectedIndex+1;
 
-  const year = new Date().getFullYear()
-  const month = new Date().getMonth()+1
+  initIncomeFields();
+  initPersonalExpenses();
+  initExtraExpenses();
+  attachInputListeners();
 
-  // Здесь ты будешь загружать доходы и расходы из Supabase
-  // и пересчитывать верхнюю и нижнюю статистику
-  document.getElementById('monthStats').innerHTML = `
-    <div class="stat-block">В наличии: 0 €</div>
-    <div class="stat-block">Остаток: 0 €</div>
-    <div class="stat-block">Процент дохода: 0%</div>
-    <div class="stat-block">Общие траты: 0 €</div>
-    <div class="stat-block">Честная доля: 0 €</div>
-    <div class="stat-block">Разница: 0 €</div>
-  `
+  // Наличные
+  const { data: cashData } = await supabase.from('total_cash')
+    .select('*')
+    .eq('person', currentPerson)
+    .eq('year', year)
+    .eq('month', month);
+  const startCash = cashData.length>0 ? cashData[0].cash : 0;
+  document.getElementById("cashAvailable").value = startCash;
+
+  // Доходы
+  const { data: incomes } = await supabase.from('income')
+    .select('*').eq('person', currentPerson).eq('year', year).eq('month', month);
+  const incomeDivs = document.querySelectorAll('#incomeFields div');
+  incomes.forEach((inc,i)=>{
+    if(incomeDivs[i]){
+      incomeDivs[i].querySelector('.income-source').value = inc.source;
+      incomeDivs[i].querySelector('.income-amount').value = inc.amount;
+      incomeDivs[i].querySelector('.income-type').value = inc.type;
+    }
+  });
+
+  // Расходы
+  const { data: payables } = await supabase.from('payable')
+    .select('*').eq('person', currentPerson).eq('year', year).eq('month', month);
+  const manualTotalObj = payables.find(p=>p.type==='manualTotal');
+  document.getElementById("manual-total").value = manualTotalObj ? manualTotalObj.amount : 0;
+
+  const personalRecords = payables.filter(p=>p.type==='personal');
+  document.querySelectorAll('#personalExpenses div').forEach((div,i)=>{
+    if(personalRecords[i]){
+      div.querySelector('.personal-expense').value = personalRecords[i].amount;
+      if(i<5) div.querySelector('select').value = personalRecords[i].comment;
+      else div.querySelector('input').value = personalRecords[i].comment;
+    }
+  });
+
+  updateMonthStats();
+  updateStatistics();
 }
 
-// --- Добавление дохода ---
-document.getElementById('addIncome').addEventListener('click', ()=>{
-  const div = document.createElement('div')
-  div.className = 'income-line'
-  div.innerHTML = `<input type="text" placeholder="Источник"><input type="number" placeholder="Сумма (€)"><input type="range" min="0" max="1" step="1">`
-  document.getElementById('incomeFields').appendChild(div)
-})
+// --- Верхняя статистика (месячная) ---
+async function updateMonthStats(){
+  const year = +document.getElementById("yearSelect").value;
+  const month = document.getElementById("monthSelect").selectedIndex+1;
+
+  // StartCash
+  const { data: cashData } = await supabase.from('total_cash')
+    .select('*').eq('person', currentPerson).eq('year', year).eq('month', month);
+  const startCash = cashData.length>0 ? cashData[0].cash : 0;
+  document.getElementById("startCash").textContent = startCash.toFixed(2);
+
+  // Доходы текущего пользователя
+  const { data: incomes } = await supabase.from('income')
+    .select('*').eq('person', currentPerson).eq('year', year).eq('month', month);
+  const incomeMonth = incomes.reduce((a,b)=>a+b.amount,0);
+
+  // Общие семейные расходы
+  let totalFamilyExpense = 0;
+  for(let p of FamilyMembers){
+    const { data: payables } = await supabase.from('payable')
+      .select('*').eq('person', p).eq('year', year).eq('month', month);
+    const manualTotal = payables.find(x=>x.type==='manualTotal')?.amount || 0;
+    const personalSum = payables.filter(x=>x.type==='personal').reduce((a,b)=>a+b.amount,0);
+    totalFamilyExpense += (manualTotal - personalSum);
+  }
+  document.getElementById("totalFamilyExpense").textContent = totalFamilyExpense.toFixed(2);
+
+  // Процент дохода
+  let totalIncomeAll = 0;
+  for(let p of FamilyMembers){
+    const { data: incomesAll } = await supabase.from('income')
+      .select('*').eq('person',p).eq('year',year);
+    totalIncomeAll += incomesAll.reduce((a,b)=>a+b.amount,0);
+  }
+  const incomePercent = totalIncomeAll ? (incomeMonth/totalIncomeAll*100) : 0;
+  document.getElementById("incomePercent").textContent = incomePercent.toFixed(1);
+
+  // Честная доля и разница
+  const fair = totalFamilyExpense * (incomePercent/100);
+  document.getElementById("fairExpense").textContent = fair.toFixed(2);
+  document.getElementById("diffExpense").textContent = (totalFamilyExpense - fair).toFixed(2);
+
+  // endCash
+  const endCash = startCash + incomeMonth - (totalFamilyExpense);
+  document.getElementById("endCash").textContent = endCash.toFixed(2);
+}
+
+// --- Нижняя статистика (годовая) ---
+async function updateStatistics(){
+  const year = +document.getElementById("statsYearSelect").value;
+  const container = document.getElementById("statisticsBlocks");
+  container.innerHTML='';
+
+  let totalEndCash = 0, totalIncome=0, totalExpense=0;
+  for(let p of FamilyMembers){
+    let incomeP=0, expenseP=0;
+    for(let m=1;m<=12;m++){
+      const { data: incomes } = await supabase.from('income').select('*').eq('person',p).eq('year',year).eq('month',m);
+      const { data: payables } = await supabase.from('payable').select('*').eq('person',p).eq('year',year).eq('month',m);
+      const monthIncome = incomes.reduce((a,b)=>a+b.amount,0);
+      const manualTotal = payables.find(x=>x.type==='manualTotal')?.amount || 0;
+      const personalSum = payables.filter(x=>x.type==='personal').reduce((a,b)=>a+b.amount,0);
+      incomeP += monthIncome;
+      expenseP += (manualTotal - personalSum);
+      totalEndCash += monthIncome - (manualTotal - personalSum);
+    }
+    totalIncome += incomeP;
+    totalExpense += expenseP;
+
+    const fair = totalExpense * (incomeP/totalIncome || 0);
+    const diff = expenseP - fair;
+
+    container.innerHTML += `<div class="stat-block">
+      <b>${p}</b><br>
+      Доход за год: ${incomeP.toFixed(2)} €<br>
+      Расходы за год: ${expenseP.toFixed(2)} €<br>
+      Честная доля: ${fair.toFixed(2)} €<br>
+      Разница: ${diff.toFixed(2)} €
+    </div>`;
+  }
+
+  container.innerHTML = `<div class="stat-block">Общий остаток семьи: ${totalEndCash.toFixed(2)} €</div>
+                         <div class="stat-block">Средний доход семьи: ${(totalIncome/12).toFixed(2)} €</div>
+                         <div class="stat-block">Средний расход семьи: ${(totalExpense/12).toFixed(2)} €</div>` + container.innerHTML;
+}
+
+// --- Запуск ---
+initInterface();
+loadData();
