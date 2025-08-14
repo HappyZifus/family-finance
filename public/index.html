@@ -7,32 +7,32 @@
 </head>
 <body>
   <header>
-    <h1>Family Finance</h1>
+    <h1>Family Finance Dashboard</h1>
   </header>
 
-  <section id="input">
-    <div class="top-selectors">
-      <div class="selector-block" id="personMe">Lesha</div>
-      <div class="selector-block" id="personWife">Lena</div>
+  <section id="selectors">
+    <div id="personSelectors" class="top-selectors">
+      <!-- User buttons will be generated here -->
+    </div>
+    <div class="month-year">
+      <label>Month:
+        <select id="monthSelect"></select>
+      </label>
+      <label>Year:
+        <select id="yearSelect"></select>
+      </label>
+    </div>
+  </section>
+
+  <section id="data">
+    <div id="incomeSection">
+      <h2>Income</h2>
+      <div id="incomeList"></div>
     </div>
 
-    <div class="top-selectors">
-      <label for="monthSelect">Month:</label>
-      <select id="monthSelect"></select>
-
-      <label for="yearSelect">Year:</label>
-      <select id="yearSelect"></select>
-    </div>
-
-    <div class="income-expense">
-      <div class="income-block">
-        <h3>Income</h3>
-        <div id="incomeList"></div>
-      </div>
-      <div class="expense-block">
-        <h3>Expenses</h3>
-        <div id="expenseList"></div>
-      </div>
+    <div id="expenseSection">
+      <h2>Expenses</h2>
+      <div id="expenseList"></div>
     </div>
   </section>
 

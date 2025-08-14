@@ -1,10 +1,11 @@
 body {
   font-family: Arial, sans-serif;
-  padding: 20px;
-  background: #f4f4f4;
+  margin: 20px;
+  background-color: #f5f5f5;
+  color: #333;
 }
 
-header h1 {
+header {
   text-align: center;
   margin-bottom: 20px;
 }
@@ -12,45 +13,52 @@ header h1 {
 .top-selectors {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+  margin-bottom: 15px;
 }
 
 .selector-block {
-  padding: 10px 20px;
-  background: #fff;
-  border: 1px solid #ccc;
+  padding: 8px 16px;
+  border: 1px solid #999;
+  border-radius: 6px;
   cursor: pointer;
-  border-radius: 5px;
-  user-select: none;
-  transition: 0.2s;
-}
-
-.selector-block:hover {
-  background: #e0e0e0;
+  background-color: #fff;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .selector-block.active {
-  background: #4caf50;
-  color: white;
+  background-color: #007bff;
+  color: #fff;
+  border-color: #0056b3;
+}
+
+.month-year {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.month-year label {
   font-weight: bold;
 }
 
-.income-expense {
+#data {
   display: flex;
   gap: 40px;
 }
 
-.income-block, .expense-block {
+#incomeSection, #expenseSection {
   flex: 1;
-  background: #fff;
-  padding: 10px;
-  border-radius: 5px;
-  min-height: 150px;
-  border: 1px solid #ccc;
+  background-color: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+h2 {
+  margin-top: 0;
 }
 
 .income-item, .expense-item {
-  padding: 5px;
-  border-bottom: 1px solid #eee;
+  padding: 6px;
+  border-bottom: 1px solid #ddd;
 }
