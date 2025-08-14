@@ -4,27 +4,30 @@ let currentPerson = null;
 let currentYear = new Date().getFullYear();
 let currentMonth = 1; // январь по умолчанию
 
-// Инициализация
 document.addEventListener('DOMContentLoaded', () => {
     setupPersonSelectors();
     setupMonthYearSelectors();
+
     // по умолчанию выберем первого человека
-    const firstPerson = document.querySelector('.selector-block');
+    const firstPerson = document.querySelector('.selector-block[data-person]');
     if (firstPerson) {
         firstPerson.click();
     }
 });
 
 function setupPersonSelectors() {
-    const persons = document.querySelectorAll('.selector-block[id^="person"]');
+    const persons = document.querySelectorAll('.selector-block[data-person]');
     persons.forEach(btn => {
         btn.addEventListener('click', () => {
             // снять выделение со всех
             persons.forEach(b => b.classList.remove('active'));
             // выделить текущего
             btn.classList.add('active');
-            currentPerson = btn.textContent.trim();
+
+            // берём ID из data-person
+            currentPerson = btn.dataset.person;
             console.log(`Выбран человек: ${currentPerson}`);
+
             loadData();
         });
     });
@@ -52,11 +55,15 @@ function setupMonthYearSelectors() {
 }
 
 async function loadData() {
-    if (!currentPerson || !currentYear || !currentMonth) return;
+    if (!currentPerson || !currentYear || !currentMonth) {
+        console.warn('Не все параметры выбраны для загрузки данных');
+        return;
+    }
 
     console.log(`Загрузка данных для ${currentPerson} — ${currentMonth}/${currentYear}`);
 
     try {
+        // Загружаем доходы
         const { data: incomeData, error: incomeError } = await supabase
             .from('income')
             .select('*')
@@ -66,6 +73,7 @@ async function loadData() {
 
         if (incomeError) throw incomeError;
 
+        // Загружаем расходы
         const { data: expenseData, error: expenseError } = await supabase
             .from('expenses')
             .select('*')
@@ -91,6 +99,11 @@ function renderIncome(incomeList) {
     if (!incomeContainer) return;
     incomeContainer.innerHTML = '';
 
+    if (!incomeList || incomeList.length === 0) {
+        incomeContainer.innerHTML = '<div class="empty-msg">Нет данных</div>';
+        return;
+    }
+
     incomeList.forEach(item => {
         const div = document.createElement('div');
         div.classList.add('income-item');
@@ -103,6 +116,11 @@ function renderExpenses(expenseList) {
     const expenseContainer = document.getElementById('expenseList');
     if (!expenseContainer) return;
     expenseContainer.innerHTML = '';
+
+    if (!expenseList || expenseList.length === 0) {
+        expenseContainer.innerHTML = '<div class="empty-msg">Нет данных</div>';
+        return;
+    }
 
     expenseList.forEach(item => {
         const div = document.createElement('div');
