@@ -2,38 +2,36 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Family Finance</title>
+<title>Family Finances</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<header>Family Finances</header>
+
 <section id="input">
-    <div class="top-selectors">
-        <div class="selector-block" id="personLesha">Lesha</div>
-        <div class="selector-block" id="personLena">Lena</div>
+  <div class="top-selectors">
+    <div class="selector-block" id="personLesha">Lesha</div>
+    <div class="selector-block" id="personLena">Lena</div>
+  </div>
+
+  <div class="input-blocks">
+    <div class="input-block">
+      <label>Income</label>
+      <div id="incomeList"></div>
     </div>
 
-    <div class="month-year-selectors">
-        <select id="monthSelect">
-            <option value="1">January</option>
-            <option value="2">February</option>
-            <!-- add other months -->
-        </select>
-
-        <select id="yearSelect">
-            <option value="2025">2025</option>
-            <option value="2024">2024</option>
-        </select>
+    <div class="input-block">
+      <label>Expenses</label>
+      <div id="expenseList"></div>
     </div>
+  </div>
+</section>
 
-    <div id="incomeList" class="list-container">
-        <!-- Income items will be rendered here -->
-    </div>
-
-    <div id="expenseList" class="list-container">
-        <!-- Expense items will be rendered here -->
-    </div>
+<section id="statistics">
+  <div class="stat-block">Available Cash<br><span class="stat-value" id="startCash">0</span> €</div>
+  <div class="stat-block">End Cash<br><span class="stat-value" id="endCash">0</span> €</div>
+  <div class="stat-block">Income %<br><span class="stat-value" id="incomePercent">0</span>%</div>
 </section>
 
 <script type="module" src="main.js"></script>
