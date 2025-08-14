@@ -1,41 +1,34 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Family Finance</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Family Finance</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Family Finance Dashboard</h1>
-  </header>
 
-  <section id="selectors">
-    <div id="personSelectors" class="top-selectors">
-      <!-- User buttons will be generated here -->
-    </div>
-    <div class="month-year">
-      <label>Month:
-        <select id="monthSelect"></select>
-      </label>
-      <label>Year:
-        <select id="yearSelect"></select>
-      </label>
-    </div>
-  </section>
+<section id="input">
+  <div id="personSelectors" class="top-selectors"></div>
 
-  <section id="data">
-    <div id="incomeSection">
-      <h2>Income</h2>
-      <div id="incomeList"></div>
-    </div>
+  <div class="month-year-selectors">
+    <label for="monthSelect">Month:</label>
+    <select id="monthSelect"></select>
 
-    <div id="expenseSection">
-      <h2>Expenses</h2>
-      <div id="expenseList"></div>
-    </div>
-  </section>
+    <label for="yearSelect">Year:</label>
+    <select id="yearSelect"></select>
+  </div>
+</section>
 
-  <script type="module" src="main.js"></script>
+<section id="incomeSection">
+  <h2>Income</h2>
+  <div id="incomeList"></div>
+</section>
+
+<section id="expensesSection">
+  <h2>Expenses</h2>
+  <div id="expenseList"></div>
+</section>
+
+<script type="module" src="main.js"></script>
 </body>
 </html>
