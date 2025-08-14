@@ -34,4 +34,8 @@ header { height: 60px; background: #3a6ea5; color: white; display: flex; align-i
   gap: 10px;
   flex-wrap: wrap;
 }
+.user-btn.active {
+  background-color: #4CAF50;
+  color: white;
+}
 

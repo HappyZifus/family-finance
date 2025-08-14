@@ -67,4 +67,25 @@ async function loadData(){
 }
 
 createIncomeLine();
+
 selectPerson('me');
+let currentPerson = null;
+let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth() + 1; // 1–12
+
+async function loadData() {
+    console.log(`Загрузка для ${currentPerson} — ${currentMonth}/${currentYear}`);
+    const income = await loadIncome(currentPerson, currentYear, currentMonth);
+    // здесь вставить вызовы функций по заполнению интерфейса доходов/расходов
+}
+
+document.querySelectorAll('.user-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        currentPerson = btn.dataset.person;
+        // визуальное выделение кнопки
+        document.querySelectorAll('.user-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // загрузка данных
+        loadData();
+    });
+});
