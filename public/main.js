@@ -1,202 +1,73 @@
 import { supabase } from './supabase/supabaseClient.js';
 
-let currentUserId = null;
-let currentMonth = new Date().getMonth() + 1;
+let currentPersonId = null;
 let currentYear = new Date().getFullYear();
+let currentMonth = new Date().getMonth() + 1; // January = 1
 
-// >>> INIT
-
-document.addEventListener('DOMContentLoaded', async () => {
-  await setupPersons();
-  setupMonthYearSelectors();
+document.addEventListener('DOMContentLoaded', () => {
+    setupPersonSelectors();
+    setupMonthYearSelectors();
+    // Select first person by default
+    const firstPersonBtn = document.querySelector('.selector-block');
+    if (firstPersonBtn) firstPersonBtn.click();
 });
 
-// >>> LOAD USER BUTTONS
-
-async function setupPersons() {
-  const { data: users, error } = await supabase.from('users').select('id,name');
-  if (error) {
-    console.error(error);
-    return;
-  }
-
-  const container = document.getElementById('personSelectors');
-  container.innerHTML = '';
-
-  users.forEach((u) => {
-    const btn = document.createElement('div');
-    btn.className = 'selector-block';
-    btn.textContent = u.name;
-    btn.dataset.id = u.id;
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.selector-block').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      currentUserId = u.id;
-      loadAllData();
+function setupPersonSelectors() {
+    const personBtns = document.querySelectorAll('.selector-block[id^="person"]');
+    personBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            personBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentPersonId = btn.dataset.userid; // use user_id
+            loadData();
+        });
     });
-    container.appendChild(btn);
-  });
-
-  // select first
-  if (users.length > 0) {
-    currentUserId = users[0].id;
-    container.firstChild.classList.add('active');
-    loadAllData();
-  }
 }
-
-// >>> MONTH / YEAR SELECTORS
 
 function setupMonthYearSelectors() {
-  const monthSelect = document.getElementById('monthSelect');
-  const yearSelect = document.getElementById('yearSelect');
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
 
-  // ---- Month options 1..12 ----
-  monthSelect.innerHTML = '';
-  for (let m = 1; m <= 12; m++) {
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = m;
-    if (m === currentMonth) opt.selected = true;
-    monthSelect.appendChild(opt);
-  }
-
-  // ---- Year options current +/- 1 ----
-  yearSelect.innerHTML = '';
-  for (let y = currentYear - 1; y <= currentYear + 1; y++) {
-    const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y;
-    if (y === currentYear) opt.selected = true;
-    yearSelect.appendChild(opt);
-  }
-
-  monthSelect.addEventListener('change', () => {
-    currentMonth = parseInt(monthSelect.value);
-    loadAllData();
-  });
-
-  yearSelect.addEventListener('change', () => {
-    currentYear = parseInt(yearSelect.value);
-    loadAllData();
-  });
+    if (monthSelect) {
+        monthSelect.addEventListener('change', () => {
+            currentMonth = parseInt(monthSelect.value);
+            loadData();
+        });
+    }
+    if (yearSelect) {
+        yearSelect.addEventListener('change', () => {
+            currentYear = parseInt(yearSelect.value);
+            loadData();
+        });
+    }
 }
 
-// >>> MASTER FETCH
+async function loadData() {
+    if (!currentPersonId) return;
 
-async function loadAllData() {
-  if (!currentUserId) return;
+    try {
+        const { data, error } = await supabase
+            .from('monthly_finance_2')
+            .select('*')
+            .eq('user_id', currentPersonId)
+            .eq('year', currentYear)
+            .eq('month', currentMonth)
+            .single(); // we expect one row per user per month
 
-  // fetch income and expenses of this person
-  const { data: incomes } = await supabase
-    .from('income')
-    .select('*')
-    .eq('user_id', currentUserId)
-    .eq('month', currentMonth)
-    .eq('year', currentYear);
+        if (error) throw error;
 
-  const { data: expenses } = await supabase
-    .from('expenses')
-    .select('*')
-    .eq('user_id', currentUserId)
-    .eq('month', currentMonth)
-    .eq('year', currentYear);
-
-  renderIncome(incomes || []);
-  renderExpenses(expenses || []);
-  calculateTopStats(incomes || [], expenses || []);
-
-  // also load YEARLY stats across all users
-  loadYearlyStatistics();
+        renderFinanceData(data);
+    } catch (err) {
+        console.error('Error fetching finance data:', err.message);
+    }
 }
 
-// >>> RENDER LISTS
-
-function renderIncome(list) {
-  const c = document.getElementById('incomeList');
-  c.innerHTML = '';
-  list.forEach(i => {
-    const div = document.createElement('div');
-    div.className = 'income-item';
-    div.textContent = `${i.source}: ${i.amount}`;
-    c.appendChild(div);
-  });
-}
-
-function renderExpenses(list) {
-  const c = document.getElementById('expenseList');
-  c.innerHTML = '';
-  list.forEach(e => {
-    const div = document.createElement('div');
-    div.className = 'expense-item';
-    div.textContent = `${e.type}: ${e.amount}`;
-    c.appendChild(div);
-  });
-}
-
-// >>> CALCULATE TOP STATS
-
-async function calculateTopStats(incomes, expenses) {
-  // fetch starting cash
-  let startCash = 0;
-  const { data: tc } = await supabase
-    .from('total_cash')
-    .select('*')
-    .eq('user_id', currentUserId)
-    .eq('month', currentMonth)
-    .eq('year', currentYear)
-    .maybeSingle();
-
-  if (tc) startCash = parseFloat(tc.amount);
-
-  const totalIncome = incomes.reduce((s, r) => s + (+r.amount), 0);
-  const totalExpense = expenses.reduce((s, r) => s + (+r.amount), 0);
-
-  const endCash = startCash + totalIncome - totalExpense;
-
-  // calculate % of family income and fair share
-  const { data: familyIncome } = await supabase
-    .from('income')
-    .select('amount')
-    .eq('year', currentYear)
-    .eq('month', currentMonth);
-  const totalFamilyIncome = (familyIncome || []).reduce((s, r) => s + (+r.amount), 0);
-
-  const incomePercent = totalFamilyIncome ? ((totalIncome / totalFamilyIncome) * 100) : 0;
-  const fairShare = totalFamilyIncome ? (totalExpense * incomePercent / 100) : 0;
-  const difference = totalExpense - fairShare;
-
-  // set dom
-  document.getElementById('startCash').textContent   = `Start Cash: ${startCash.toFixed(2)}`;
-  document.getElementById('endCash').textContent     = `End Cash: ${endCash.toFixed(2)}`;
-  document.getElementById('incomePercent').textContent = `Income %: ${incomePercent.toFixed(1)}%`;
-  document.getElementById('totalFamilyExpenses').textContent = `Total Expenses: ${totalExpense.toFixed(2)}`;
-  document.getElementById('fairShare').textContent   = `Fair Share: ${fairShare.toFixed(2)}`;
-  document.getElementById('difference').textContent  = `Diff: ${difference.toFixed(2)}`;
-}
-
-// >>> YEARLY BLOCK
-
-async function loadYearlyStatistics() {
-  const { data: stats } = await supabase.from('income').select('*').eq('year', currentYear);
-  const yearly = document.getElementById('yearlyStatsContainer');
-  yearly.innerHTML = '';
-
-  if (stats.length === 0) {
-    yearly.textContent = 'No yearly data.';
-    return;
-  }
-
-  // simple sum by user
-  const grouped = {};
-  stats.forEach(r => {
-    if (!grouped[r.user_id]) grouped[r.user_id] = 0;
-    grouped[r.user_id] += (+r.amount);
-  });
-
-  Object.entries(grouped).forEach(([uid, total]) => {
-    const div = document.createElement('div');
-    div.textContent = `User ${uid}: ${total.toFixed(2)}`;
-    yearly.appendChild(div);
-  });
+function renderFinanceData(row) {
+    // Example: Update fields in your HTML
+    document.getElementById('startCash').textContent = row.start_cash ?? 0;
+    document.getElementById('endCash').textContent = row.end_cash ?? 0;
+    document.getElementById('income').textContent = row.income ?? 0;
+    document.getElementById('expenses').textContent = row.expenses ?? 0;
+    document.getElementById('fairShare').textContent = row.fair_share ?? 0;
+    document.getElementById('difference').textContent = row.difference ?? 0;
 }
