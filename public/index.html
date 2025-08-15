@@ -1,50 +1,60 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Family Finance</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Finance</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header class="navbar">
-    <h1>Family Finance Dashboard</h1>
-  </header>
 
-  <!-- Person & Date Selection -->
-  <section class="toolbar">
-    <div class="person-buttons">
-      <button class="person-btn" data-id="a833b039-f440-4474-b566-3333e73398c8">Lesha</button>
-      <button class="person-btn" data-id="5148e3c8-adab-484c-975c-f2f5b494fb4f">Lena</button>
-    </div>
+<!-- Navigation -->
+<nav class="navigation">
+  <h1>Family Finance</h1>
+</nav>
 
-    <div class="date-selectors">
-      <select id="monthSelect"></select>
-      <select id="yearSelect"></select>
-    </div>
-  </section>
+<!-- Person Selection -->
+<section class="people-selection">
+  <div class="selector-block" id="personLesha">Lesha</div>
+  <div class="selector-block" id="personLena">Lena</div>
+</section>
 
-  <!-- Statistic Cards -->
-  <section class="stats-grid">
-    <div class="stat-card">Start Cash<br><span id="startCash">0</span></div>
-    <div class="stat-card">End Cash<br><span id="endCash">0</span></div>
-    <div class="stat-card">Income %<br><span id="incomePercent">0%</span></div>
-    <div class="stat-card">Total Expenses<br><span id="totalExpenses">0</span></div>
-    <div class="stat-card">Fair Share<br><span id="fairShare">0</span></div>
-    <div class="stat-card">Difference<br><span id="difference">0</span></div>
-  </section>
+<!-- Month / Year Selection -->
+<section class="month-year">
+  <label for="monthSelect">Month:</label>
+  <select id="monthSelect"></select>
 
-  <!-- Income/Expense Blocks -->
-  <section class="blocks-row">
-    <div class="card-block">
-      <h2>Income</h2>
-      <div id="incomeList"></div>
-    </div>
-    <div class="card-block">
-      <h2>Expenses</h2>
-      <div id="expenseList"></div>
-    </div>
-  </section>
+  <label for="yearSelect">Year:</label>
+  <select id="yearSelect"></select>
+</section>
 
-  <script type="module" src="main.js"></script>
+<!-- Cards / Stats -->
+<section class="cards">
+  <div class="card">
+    <h3>Total Income</h3>
+    <p id="totalIncome">0</p>
+  </div>
+  <div class="card">
+    <h3>Total Expenses</h3>
+    <input type="number" id="totalExpenses" min="0" step="0.01"/>
+  </div>
+  <div class="card">
+    <h3>Start Cash</h3>
+    <p id="startCash">0</p>
+  </div>
+  <div class="card">
+    <h3>End Cash</h3>
+    <p id="endCash">0</p>
+  </div>
+</section>
+
+<!-- Income List -->
+<section class="income-list" id="incomeList"></section>
+
+<!-- Expenses List -->
+<section class="expense-list" id="expenseList"></section>
+
+<script type="module" src="supabase/supabaseClient.js"></script>
+<script type="module" src="main.js"></script>
 </body>
 </html>
