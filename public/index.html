@@ -2,45 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Family Finance</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Family Finance</h1>
-    <div id="personSelectors" class="top-selectors">
-      <div class="selector-block" data-person="Lesha">Lesha</div>
-      <div class="selector-block" data-person="Lena">Lena</div>
-    </div>
-    <div class="top-selectors">
+  <section id="selectors">
+    <div id="personSelectors" class="selectors-row"></div>
+    <div class="selectors-row">
+      Month:
       <select id="monthSelect"></select>
+      Year:
       <select id="yearSelect"></select>
     </div>
-  </header>
-
-  <section id="topStats">
-    <div class="stat-block" id="startCash">Start Cash: 0</div>
-    <div class="stat-block" id="endCash">End Cash: 0</div>
-    <div class="stat-block" id="incomePercent">Income %: 0%</div>
-    <div class="stat-block" id="totalFamilyExpenses">Total Expenses: 0</div>
-    <div class="stat-block" id="fairShare">Fair Share: 0</div>
-    <div class="stat-block" id="difference">Difference: 0</div>
   </section>
 
-  <section id="incomeSection">
-    <h2>Income</h2>
-    <div id="incomeList"></div>
-  </section>
-
-  <section id="expenseSection">
-    <h2>Expenses</h2>
-    <div id="expenseList"></div>
-  </section>
-
-  <section id="yearStats">
-    <h2>Yearly Statistics</h2>
-    <div id="yearlyStatsContainer"></div>
+  <section id="stats">
+    <h2>Monthly Statistics</h2>
+    <div class="stat-item">Income: <span id="incomeValue">0</span></div>
+    <div class="stat-item">Expenses: <span id="expensesValue">0</span></div>
+    <div class="stat-item">Start Cash: <span id="startCashValue">0</span></div>
+    <div class="stat-item">End Cash: <span id="endCashValue">0</span></div>
+    <div class="stat-item">Income %: <span id="incomePercentValue">0</span></div>
+    <div class="stat-item">Fair Share: <span id="fairShareValue">0</span></div>
+    <div class="stat-item">Difference: <span id="differenceValue">0</span></div>
   </section>
 
   <script type="module" src="main.js"></script>

@@ -4,8 +4,12 @@ let currentPersonId = null;
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth() + 1;
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // create two test buttons manually
+document.addEventListener('DOMContentLoaded', () => {
+  setupPersonSelectors();
+  setupMonthYearSelectors();
+});
+
+function setupPersonSelectors() {
   const persons = [
     { id: 'a833b039-f440-4474-b566-3333e73398c8', name: 'Lesha' },
     { id: '5148e3c8-adab-484c-975c-f2f5b494fb4f', name: 'Lena' }
@@ -24,11 +28,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       loadData();
     });
     container.appendChild(btn);
-    if (idx === 0) btn.click(); // select first by default
+    if (idx === 0) btn.click(); // default selection
   });
-
-  setupMonthYearSelectors();
-});
+}
 
 function setupMonthYearSelectors() {
   const monthSelect = document.getElementById('monthSelect');
@@ -65,8 +67,6 @@ function setupMonthYearSelectors() {
 async function loadData() {
   if (!currentPersonId) return;
 
-  console.log('Fetching data for:', currentPersonId, currentMonth, currentYear);
-
   const { data, error } = await supabase
     .from('monthly_finance_2')
     .select('*')
@@ -77,7 +77,18 @@ async function loadData() {
 
   if (error) {
     console.error('Fetch error:', error);
-  } else {
-    console.log('Data fetched:', data);
+    return;
   }
+
+  renderData(data);
+}
+
+function renderData(data) {
+  document.getElementById('incomeValue').textContent = data.sum_income ?? 0;
+  document.getElementById('expensesValue').textContent = data.sum_expenses ?? 0;
+  document.getElementById('startCashValue').textContent = data.amount_start ?? 0;
+  document.getElementById('endCashValue').textContent = data.amount_end ?? 0;
+  document.getElementById('incomePercentValue').textContent = data.income_percent ?? 0;
+  document.getElementById('fairShareValue').textContent = data.fair_share ?? 0;
+  document.getElementById('differenceValue').textContent = data.difference ?? 0;
 }
