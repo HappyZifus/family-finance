@@ -1,91 +1,64 @@
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
+import { supabase } from './supabase/supabaseClient.js';
 
-const supabaseUrl = 'https://mlkkehhdymhqctxlioov.supabase.co';
-const supabaseKey = 'YOUR_ANON_KEY_HERE'; // replace with anon key if RLS allows read
-const supabase = createClient(supabaseUrl, supabaseKey);
+let currentPersonId = null;
+let currentYear = 2025;
+let currentMonth = 1;
 
-let currentPerson = 'me'; // 'me' = Lesha, 'wife' = Lena
+const personButtons = {
+  'person1': null,
+  'person2': null
+};
 
-const peopleMap = { me: 'Lesha', wife: 'Lena' };
+document.addEventListener('DOMContentLoaded', async () => {
+  personButtons['person1'] = document.getElementById('person1');
+  personButtons['person2'] = document.getElementById('person2');
 
-document.getElementById('personMe').addEventListener('click', () => selectPerson('me'));
-document.getElementById('personWife').addEventListener('click', () => selectPerson('wife'));
-document.getElementById('yearSelect').addEventListener('change', loadData);
-document.getElementById('monthSelect').addEventListener('change', loadData);
+  personButtons['person1'].addEventListener('click', ()=>selectPerson('Lesha'));
+  personButtons['person2'].addEventListener('click', ()=>selectPerson('Lena'));
 
-function selectPerson(person) {
-    currentPerson = person;
-    document.getElementById('personMe').classList.toggle('active', person === 'me');
-    document.getElementById('personWife').classList.toggle('active', person === 'wife');
-    loadData();
+  document.getElementById('yearSelect').addEventListener('change', ()=>{ currentYear=+document.getElementById('yearSelect').value; loadData(); });
+  document.getElementById('monthSelect').addEventListener('change', ()=>{ currentMonth=document.getElementById('monthSelect').selectedIndex+1; loadData(); });
+
+  selectPerson('Lesha');
+});
+
+function selectPerson(name){
+  currentPersonId = name;
+  Object.keys(personButtons).forEach(k=>{
+    personButtons[k].classList.toggle('active', personButtons[k].textContent===name);
+  });
+  loadData();
 }
 
-async function loadData() {
-    const year = +document.getElementById('yearSelect').value;
-    const month = document.getElementById('monthSelect').selectedIndex + 1;
+async function loadData(){
+  if(!currentPersonId) return;
 
-    // Fetch monthly finance for all users
-    let { data: financeData, error: financeErr } = await supabase
-        .from('monthly_finance_2')
-        .select('*')
-        .eq('year', year)
-        .eq('month', month);
+  const { data, error } = await supabase
+    .from('monthly_finance_2')
+    .select('*')
+    .eq('user_name', currentPersonId)
+    .eq('year', currentYear)
+    .eq('month', currentMonth)
+    .limit(1)
+    .single();
 
-    if (financeErr) { console.error(financeErr); return; }
+  if(error){
+    console.error(error);
+    return;
+  }
 
-    // Fetch start/end cash
-    let { data: cashData, error: cashErr } = await supabase
-        .from('total_cash')
-        .select('*')
-        .eq('year', year)
-        .eq('month', month);
+  if(!data) return;
 
-    if (cashErr) { console.error(cashErr); return; }
+  document.getElementById("startCash").textContent = (+data.amount_start).toFixed(2);
+  document.getElementById("endCash").textContent = (+data.amount_end).toFixed(2);
+  document.getElementById("incomePercent").textContent = (+data.income_percent).toFixed(2);
+  document.getElementById("totalFamilyExpense").textContent = (+data.sum_expenses).toFixed(2);
+  document.getElementById("fairExpense").textContent = (+data.fair_share).toFixed(2);
+  document.getElementById("diffExpense").textContent = (+data.difference).toFixed(2);
 
-    const personData = financeData.find(r => r.user_name === peopleMap[currentPerson]);
-    const cashPerson = cashData.find(c => c.user_id === personData?.user_id);
+  const incomeDiv = document.getElementById('incomeDisplay');
+  incomeDiv.innerHTML = `<div class="income-item">Total Income: ${(+data.sum_income).toFixed(2)} €</div>`;
 
-    // Populate stats
-    document.getElementById('startCash').textContent = cashPerson?.amount_start?.toFixed(2) ?? '0';
-    const endCash = (cashPerson?.amount_start ?? 0) + (personData?.sum_income ?? 0) - (personData?.sum_expenses ?? 0);
-    document.getElementById('endCash').textContent = endCash.toFixed(2);
-    document.getElementById('incomePercent').textContent = personData?.income_percent?.toFixed(2) ?? '0';
-    document.getElementById('totalFamilyExpense').textContent = personData?.family_total_expense?.toFixed(2) ?? '0';
-    document.getElementById('fairExpense').textContent = personData?.fair_share?.toFixed(2) ?? '0';
-    const difference = (personData?.fair_share ?? 0) - (personData?.sum_expenses ?? 0);
-    document.getElementById('diffExpense').textContent = difference.toFixed(2);
-
-    // Populate income lines
-    const incomeContainer = document.getElementById('incomeFields');
-    incomeContainer.innerHTML = '';
-    if (personData) {
-        const div = document.createElement('div');
-        div.classList.add('income-line');
-        div.innerHTML = `<input type="text" readonly value="Income" class="income-source">
-                         <input type="number" readonly value="${personData.sum_income.toFixed(2)}" class="income-amount">`;
-        incomeContainer.appendChild(div);
-    }
-
-    // Populate expenses
-    const expenseContainer = document.getElementById('personalExpenses');
-    expenseContainer.innerHTML = '';
-    if (personData) {
-        const div = document.createElement('div');
-        div.classList.add('expense-line');
-        div.innerHTML = `<input type="number" readonly value="${personData.sum_expenses.toFixed(2)}" class="personal-expense">`;
-        expenseContainer.appendChild(div);
-    }
-
-    // Extra expenses (for display)
-    const extraContainer = document.getElementById('extraExpenses');
-    extraContainer.innerHTML = '';
-    if (personData) {
-        const div = document.createElement('div');
-        div.classList.add('extra-line');
-        div.innerHTML = `<input type="number" readonly value="0" class="extra-expense">`;
-        extraContainer.appendChild(div);
-    }
+  const expenseDiv = document.getElementById('expenseDisplay');
+  expenseDiv.innerHTML = `<div class="expense-item">Total Expenses: ${(+data.sum_expenses).toFixed(2)} €</div>`;
 }
-
-// Initial load
-loadData();
