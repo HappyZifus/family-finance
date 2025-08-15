@@ -2,49 +2,46 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Family Finance</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <header>
     <h1>Family Finance</h1>
-    <div id="personSelectors" class="selectors">
-      <!-- Buttons will be generated here -->
+    <div id="personSelectors" class="top-selectors">
+      <div class="selector-block" data-person="Lesha">Lesha</div>
+      <div class="selector-block" data-person="Lena">Lena</div>
     </div>
-    <div class="selectors">
-      Month: 
-      <select id="monthSelect">
-        <option value="1">Jan</option>
-        <option value="2">Feb</option>
-        <option value="3">Mar</option>
-        <option value="4">Apr</option>
-        <option value="5">May</option>
-        <option value="6">Jun</option>
-        <option value="7">Jul</option>
-        <option value="8">Aug</option>
-        <option value="9">Sep</option>
-        <option value="10">Oct</option>
-        <option value="11">Nov</option>
-        <option value="12">Dec</option>
-      </select>
-      Year:
-      <select id="yearSelect">
-        <option value="2025">2025</option>
-        <option value="2026">2026</option>
-      </select>
+    <div class="top-selectors">
+      <select id="monthSelect"></select>
+      <select id="yearSelect"></select>
     </div>
   </header>
 
-  <main>
-    <section>
-      <h2>Income</h2>
-      <div id="incomeList"></div>
-    </section>
-    <section>
-      <h2>Expenses</h2>
-      <div id="expenseList"></div>
-    </section>
-  </main>
+  <section id="topStats">
+    <div class="stat-block" id="startCash">Start Cash: 0</div>
+    <div class="stat-block" id="endCash">End Cash: 0</div>
+    <div class="stat-block" id="incomePercent">Income %: 0%</div>
+    <div class="stat-block" id="totalFamilyExpenses">Total Expenses: 0</div>
+    <div class="stat-block" id="fairShare">Fair Share: 0</div>
+    <div class="stat-block" id="difference">Difference: 0</div>
+  </section>
+
+  <section id="incomeSection">
+    <h2>Income</h2>
+    <div id="incomeList"></div>
+  </section>
+
+  <section id="expenseSection">
+    <h2>Expenses</h2>
+    <div id="expenseList"></div>
+  </section>
+
+  <section id="yearStats">
+    <h2>Yearly Statistics</h2>
+    <div id="yearlyStatsContainer"></div>
+  </section>
 
   <script type="module" src="main.js"></script>
 </body>

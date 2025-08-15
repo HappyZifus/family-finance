@@ -1,39 +1,86 @@
 body {
   font-family: Arial, sans-serif;
-  padding: 20px;
+  margin: 0;
+  padding: 0;
+  background: #f8f9fa;
 }
 
 header {
-  margin-bottom: 20px;
+  background: #007bff;
+  color: white;
+  padding: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.selectors {
+header h1 {
+  margin: 0 20px 0 0;
+}
+
+.top-selectors {
   display: flex;
   gap: 10px;
-  margin-top: 10px;
+  margin: 10px 0;
 }
 
-button.person-btn {
-  padding: 5px 10px;
+.selector-block {
+  padding: 8px 16px;
+  background: white;
+  color: #007bff;
+  border-radius: 8px;
   cursor: pointer;
-  border: 1px solid #333;
-  background-color: #fff;
+  font-weight: bold;
+  user-select: none;
+  transition: all 0.2s;
 }
 
-button.person-btn.active {
-  background-color: #333;
-  color: #fff;
+.selector-block.active {
+  background: #0056b3;
+  color: white;
+}
+
+.selector-block:hover {
+  opacity: 0.8;
+}
+
+#topStats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 20px;
+}
+
+.stat-block {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  font-weight: bold;
 }
 
 section {
-  margin-top: 20px;
-  border-top: 1px solid #ccc;
-  padding-top: 10px;
+  margin: 20px;
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
 }
 
-#incomeList div,
-#expenseList div {
-  margin-bottom: 5px;
-  padding: 5px;
-  border-bottom: 1px solid #eee;
+h2 {
+  margin-top: 0;
+}
+
+#incomeList, #expenseList, #yearlyStatsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.income-item, .expense-item {
+  padding: 8px;
+  background: #e9ecef;
+  border-radius: 6px;
 }
