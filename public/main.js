@@ -49,8 +49,8 @@ async function loadData(){
 
   if(!data) return;
 
-  document.getElementById("startCash").textContent = (+data.amount_start).toFixed(2);
-  document.getElementById("endCash").textContent = (+data.amount_end).toFixed(2);
+  document.getElementById("startCash").textContent = (+data.start_cash).toFixed(2);
+  document.getElementById("endCash").textContent   = (+data.end_cash).toFixed(2);
   document.getElementById("incomePercent").textContent = (+data.income_percent).toFixed(2);
   document.getElementById("totalFamilyExpense").textContent = (+data.sum_expenses).toFixed(2);
   document.getElementById("fairExpense").textContent = (+data.fair_share).toFixed(2);
