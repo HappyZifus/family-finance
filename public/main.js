@@ -1,92 +1,88 @@
 import { supabase } from './supabase/supabaseClient.js';
 
 let currentPersonId = null;
+let currentMonth = new Date().getMonth() + 1;
 let currentYear = new Date().getFullYear();
-let currentMonth = 1;
 
-// DOM Elements
-const startCashEl = document.getElementById('startCash');
-const endCashEl = document.getElementById('endCash');
-const incomePercentEl = document.getElementById('incomePercent');
-const totalExpensesEl = document.getElementById('totalExpenses');
-const fairShareEl = document.getElementById('fairShare');
-const differenceEl = document.getElementById('difference');
-
-const incomeListEl = document.getElementById('incomeList');
-const expenseListEl = document.getElementById('expenseList');
-const yearlySummaryEl = document.getElementById('yearlySummary');
-
-// Setup selectors
 document.addEventListener('DOMContentLoaded', () => {
-    setupPersonButtons();
-    setupMonthYearSelectors();
-    document.querySelector('.person-btn')?.click();
+  setupPersonButtons();
+  setupDateSelectors();
 });
 
 function setupPersonButtons() {
-    const buttons = document.querySelectorAll('.person-btn');
-    buttons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            buttons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentPersonId = btn.dataset.id;
-            loadData();
-        });
+  const buttons = document.querySelectorAll('.person-btn');
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      buttons.forEach((b) => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentPersonId = btn.dataset.id;
+      loadData();
     });
+  });
+  buttons[0].click();
 }
 
-function setupMonthYearSelectors() {
-    const monthSelect = document.getElementById('monthSelect');
-    const yearSelect = document.getElementById('yearSelect');
+function setupDateSelectors() {
+  const monthSelect = document.getElementById('monthSelect');
+  const yearSelect = document.getElementById('yearSelect');
 
-    monthSelect.addEventListener('change', () => {
-        currentMonth = parseInt(monthSelect.value);
-        loadData();
-    });
+  for (let m = 1; m <= 12; m++) {
+    const op = document.createElement('option');
+    op.value = m;
+    op.textContent = m;
+    if (m === currentMonth) op.selected = true;
+    monthSelect.appendChild(op);
+  }
+  for (let y = currentYear - 1; y <= currentYear + 1; y++) {
+    const op = document.createElement('option');
+    op.value = y;
+    op.textContent = y;
+    if (y === currentYear) op.selected = true;
+    yearSelect.appendChild(op);
+  }
 
-    yearSelect.addEventListener('change', () => {
-        currentYear = parseInt(yearSelect.value);
-        loadData();
-    });
+  monthSelect.addEventListener('change', () => {
+    currentMonth = +monthSelect.value;
+    loadData();
+  });
+  yearSelect.addEventListener('change', () => {
+    currentYear = +yearSelect.value;
+    loadData();
+  });
 }
 
 async function loadData() {
-    if (!currentPersonId) return;
+  if (!currentPersonId) return;
+  const { data, error } = await supabase
+    .from('monthly_finance_2')
+    .select('*')
+    .eq('user_id', currentPersonId)
+    .eq('year', currentYear)
+    .eq('month', currentMonth)
+    .single();
 
-    try {
-        const { data, error } = await supabase
-            .from('monthly_finance_2')
-            .select('*')
-            .eq('user_id', currentPersonId)
-            .eq('year', currentYear)
-            .eq('month', currentMonth)
-            .single();
+  if (error) {
+    console.error(error);
+    return;
+  }
 
-        if (error) throw error;
-
-        // Top stats
-        startCashEl.textContent = data.amount_start ?? 0;
-        endCashEl.textContent = data.amount_end ?? 0;
-        incomePercentEl.textContent = `${data.income_percent?.toFixed(1) ?? 0}%`;
-        totalExpensesEl.textContent = data.sum_expenses ?? 0;
-        fairShareEl.textContent = data.fair_share ?? 0;
-        differenceEl.textContent = data.difference ?? 0;
-
-        // Income & Expenses
-        renderList(incomeListEl, data.sum_income, 'Income');
-        renderList(expenseListEl, data.sum_expenses, 'Expense');
-
-        // Yearly summary placeholder
-        yearlySummaryEl.textContent = `Income %: ${data.income_percent?.toFixed(1) ?? 0}%, Fair Share: ${data.fair_share ?? 0}`;
-
-    } catch (err) {
-        console.error('Error fetching data:', err.message);
-    }
+  renderTopStats(data);
+  renderIncomeAndExpenses(data);
 }
 
-function renderList(container, value, type) {
-    container.innerHTML = '';
-    const div = document.createElement('div');
-    div.textContent = `${type}: ${value}`;
-    container.appendChild(div);
+function renderTopStats(d) {
+  document.getElementById('startCash').textContent = d.amount_start ?? 0;
+  document.getElementById('endCash').textContent = d.amount_end ?? 0;
+  document.getElementById('incomePercent').textContent = (d.income_percent?.toFixed(1) ?? 0) + '%';
+  document.getElementById('totalExpenses').textContent = d.sum_expenses ?? 0;
+  document.getElementById('fairShare').textContent = d.fair_share ?? 0;
+  document.getElementById('difference').textContent = d.difference ?? 0;
+}
+
+function renderIncomeAndExpenses(d) {
+  // Simplified: show totals as single line. You can expand later to list items.
+  document.getElementById('incomeList').innerHTML =
+    `<div>Sum: ${d.sum_income ?? 0}</div>`;
+  document.getElementById('expenseList').innerHTML =
+    `<div>Sum: ${d.sum_expenses ?? 0}</div>`;
 }
