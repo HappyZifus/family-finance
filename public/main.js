@@ -48,17 +48,36 @@ async function setupPersons() {
 // >>> MONTH / YEAR SELECTORS
 
 function setupMonthYearSelectors() {
-  const m = document.getElementById('monthSelect');
-  const y = document.getElementById('yearSelect');
+  const monthSelect = document.getElementById('monthSelect');
+  const yearSelect = document.getElementById('yearSelect');
 
-  // pre-selected by HTML
+  // ---- Month options 1..12 ----
+  monthSelect.innerHTML = '';
+  for (let m = 1; m <= 12; m++) {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    if (m === currentMonth) opt.selected = true;
+    monthSelect.appendChild(opt);
+  }
 
-  m.addEventListener('change', () => {
-    currentMonth = +m.value;
+  // ---- Year options current +/- 1 ----
+  yearSelect.innerHTML = '';
+  for (let y = currentYear - 1; y <= currentYear + 1; y++) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if (y === currentYear) opt.selected = true;
+    yearSelect.appendChild(opt);
+  }
+
+  monthSelect.addEventListener('change', () => {
+    currentMonth = parseInt(monthSelect.value);
     loadAllData();
   });
-  y.addEventListener('change', () => {
-    currentYear = +y.value;
+
+  yearSelect.addEventListener('change', () => {
+    currentYear = parseInt(yearSelect.value);
     loadAllData();
   });
 }
