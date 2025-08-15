@@ -29,24 +29,37 @@
 </section>
 
 <!-- Cards / Stats -->
-<section class="cards">
-  <div class="card">
-    <h3>Total Income</h3>
-    <p id="totalIncome">0</p>
+<section id="cards">
+  <div class="card" id="cardIncome">
+    <div class="card-title">Total Income</div>
+    <div class="card-value" id="sumIncome">0</div>
   </div>
-  <div class="card">
-    <h3>Total Expenses</h3>
-    <input type="number" id="totalExpenses" min="0" step="0.01"/>
+  <div class="card" id="cardExpenses">
+    <div class="card-title">Total Expenses</div>
+    <input type="number" id="manualTotal" value="0" />
   </div>
-  <div class="card">
-    <h3>Start Cash</h3>
-    <p id="startCash">0</p>
+  <div class="card" id="cardStartCash">
+    <div class="card-title">Start Cash</div>
+    <div class="card-value" id="startCash">0</div>
   </div>
-  <div class="card">
-    <h3>End Cash</h3>
-    <p id="endCash">0</p>
+  <div class="card" id="cardEndCash">
+    <div class="card-title">End Cash</div>
+    <div class="card-value" id="endCash">0</div>
+  </div>
+  <div class="card" id="cardPercent">
+    <div class="card-title">Income %</div>
+    <div class="card-value" id="incomePercent">0%</div>
+  </div>
+  <div class="card" id="cardFairShare">
+    <div class="card-title">Fair Share</div>
+    <div class="card-value" id="fairShare">0</div>
+  </div>
+  <div class="card" id="cardDifference">
+    <div class="card-title">Difference</div>
+    <div class="card-value" id="difference">0</div>
   </div>
 </section>
+
 
 <!-- Income List -->
 <section class="income-list" id="incomeList"></section>
