@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupDateSelectors();
 });
 
+// Person selection buttons
 function setupPersonButtons() {
   const buttons = document.querySelectorAll('.person-btn');
   buttons.forEach((btn) => {
@@ -19,26 +20,28 @@ function setupPersonButtons() {
       loadData();
     });
   });
-  buttons[0].click();
+  buttons[0]?.click();
 }
 
+// Month/Year selectors
 function setupDateSelectors() {
   const monthSelect = document.getElementById('monthSelect');
   const yearSelect = document.getElementById('yearSelect');
 
   for (let m = 1; m <= 12; m++) {
-    const op = document.createElement('option');
-    op.value = m;
-    op.textContent = m;
-    if (m === currentMonth) op.selected = true;
-    monthSelect.appendChild(op);
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    if (m === currentMonth) opt.selected = true;
+    monthSelect.appendChild(opt);
   }
-  for (let y = currentYear - 1; y <= currentYear + 1; y++) {
-    const op = document.createElement('option');
-    op.value = y;
-    op.textContent = y;
-    if (y === currentYear) op.selected = true;
-    yearSelect.appendChild(op);
+
+  for (let y = currentYear - 2; y <= currentYear + 1; y++) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if (y === currentYear) opt.selected = true;
+    yearSelect.appendChild(opt);
   }
 
   monthSelect.addEventListener('change', () => {
@@ -51,8 +54,10 @@ function setupDateSelectors() {
   });
 }
 
+// Load from Supabase VIEW monthly_finance_2
 async function loadData() {
   if (!currentPersonId) return;
+
   const { data, error } = await supabase
     .from('monthly_finance_2')
     .select('*')
@@ -65,24 +70,19 @@ async function loadData() {
     console.error(error);
     return;
   }
-
-  renderTopStats(data);
-  renderIncomeAndExpenses(data);
+  renderData(data);
 }
 
-function renderTopStats(d) {
-  document.getElementById('startCash').textContent = d.amount_start ?? 0;
-  document.getElementById('endCash').textContent = d.amount_end ?? 0;
-  document.getElementById('incomePercent').textContent = (d.income_percent?.toFixed(1) ?? 0) + '%';
+function renderData(d) {
+  // Top stats
+  document.getElementById('startCash').textContent = d.start_cash ?? 0;
+  document.getElementById('endCash').textContent = d.end_cash ?? 0;
+  document.getElementById('incomePercent').textContent = ((d.income_percent || 0).toFixed(1)) + '%';
   document.getElementById('totalExpenses').textContent = d.sum_expenses ?? 0;
   document.getElementById('fairShare').textContent = d.fair_share ?? 0;
   document.getElementById('difference').textContent = d.difference ?? 0;
-}
 
-function renderIncomeAndExpenses(d) {
-  // Simplified: show totals as single line. You can expand later to list items.
-  document.getElementById('incomeList').innerHTML =
-    `<div>Sum: ${d.sum_income ?? 0}</div>`;
-  document.getElementById('expenseList').innerHTML =
-    `<div>Sum: ${d.sum_expenses ?? 0}</div>`;
+  // Income & Expense Totals
+  document.getElementById('incomeList').innerHTML = `<div>Total: ${d.sum_income ?? 0}</div>`;
+  document.getElementById('expenseList').innerHTML = `<div>Total: ${d.sum_expenses ?? 0}</div>`;
 }
