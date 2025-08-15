@@ -2,46 +2,38 @@ import { supabase } from './supabase/supabaseClient.js';
 
 let currentPersonId = null;
 let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth() + 1; // JS months 0–11
+let currentMonth = new Date().getMonth() + 1;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await setupPersonSelectors();
-  setupMonthYearSelectors();
-});
-
-// Load users from Supabase to create buttons
-async function setupPersonSelectors() {
-  const { data: users, error } = await supabase.from('users').select('id,name');
-  if (error) return console.error('Error fetching users:', error);
+  // create two test buttons manually
+  const persons = [
+    { id: 'a833b039-f440-4474-b566-3333e73398c8', name: 'Lesha' },
+    { id: '5148e3c8-adab-484c-975c-f2f5b494fb4f', name: 'Lena' }
+  ];
 
   const container = document.getElementById('personSelectors');
-  container.innerHTML = '';
-
-  users.forEach((u, idx) => {
+  persons.forEach((p, idx) => {
     const btn = document.createElement('div');
     btn.classList.add('selector-block');
-    btn.textContent = u.name;
-    btn.dataset.userid = u.id;
+    btn.textContent = p.name;
+    btn.dataset.userid = p.id;
     btn.addEventListener('click', () => {
-      currentPersonId = u.id;
+      currentPersonId = p.id;
       container.querySelectorAll('.selector-block').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       loadData();
     });
     container.appendChild(btn);
-
-    // select first by default
-    if (idx === 0) {
-      btn.click();
-    }
+    if (idx === 0) btn.click(); // select first by default
   });
-}
+
+  setupMonthYearSelectors();
+});
 
 function setupMonthYearSelectors() {
   const monthSelect = document.getElementById('monthSelect');
   const yearSelect = document.getElementById('yearSelect');
 
-  // populate month/year options
   for (let m = 1; m <= 12; m++) {
     const opt = document.createElement('option');
     opt.value = m;
@@ -70,9 +62,10 @@ function setupMonthYearSelectors() {
   });
 }
 
-// Load data from the new view
 async function loadData() {
   if (!currentPersonId) return;
+
+  console.log('Fetching data for:', currentPersonId, currentMonth, currentYear);
 
   const { data, error } = await supabase
     .from('monthly_finance_2')
@@ -80,21 +73,11 @@ async function loadData() {
     .eq('user_id', currentPersonId)
     .eq('year', currentYear)
     .eq('month', currentMonth)
-    .single(); // only one row per user/month
+    .single();
 
-  if (error) return console.error('Error loading monthly finance:', error);
-
-  renderData(data);
-}
-
-function renderData(data) {
-  if (!data) return;
-
-  document.getElementById('income').textContent = data.sum_income ?? 0;
-  document.getElementById('expenses').textContent = data.sum_expenses ?? 0;
-  document.getElementById('startCash').textContent = data.start_cash ?? 0;
-  document.getElementById('endCash').textContent = data.end_cash ?? 0;
-  document.getElementById('incomePercent').textContent = data.income_percent?.toFixed(2) ?? '0';
-  document.getElementById('fairShare').textContent = data.fair_share?.toFixed(2) ?? '0';
-  document.getElementById('difference').textContent = data.difference?.toFixed(2) ?? '0';
+  if (error) {
+    console.error('Fetch error:', error);
+  } else {
+    console.log('Data fetched:', data);
+  }
 }
