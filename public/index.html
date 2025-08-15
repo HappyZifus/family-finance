@@ -9,6 +9,7 @@
 
 <header>Family Finance</header>
 
+<!-- Month Statistics -->
 <div id="monthStats">
   <div class="stat-block">Start Cash<br><span class="stat-value" id="startCash">0</span> €</div>
   <div class="stat-block">End Cash<br><span class="stat-value" id="endCash">0</span> €</div>
@@ -18,13 +19,14 @@
   <div class="stat-block">Difference<br><span class="stat-value" id="diffExpense">0</span> €</div>
 </div>
 
+<!-- Top Selectors -->
 <section id="input">
   <div class="top-selectors">
-    <div class="selector-block" id="person1">Lesha</div>
-    <div class="selector-block" id="person2">Lena</div>
+    <div class="selector-block" id="personMe">Lesha</div>
+    <div class="selector-block" id="personWife">Lena</div>
     <div class="selector-block">
       <label>Year:</label>
-      <select id="yearSelect"><option>2025</option><option>2026</option></select>
+      <select id="yearSelect"><option value="2025">2025</option><option value="2026">2026</option></select>
     </div>
     <div class="selector-block">
       <label>Month:</label>
@@ -36,22 +38,30 @@
     </div>
   </div>
 
+  <!-- Headers -->
   <div class="headers">
     <div>Income</div>
     <div>Expenses</div>
   </div>
 
+  <!-- Input Blocks -->
   <div class="input-blocks">
+    <!-- Income -->
     <div class="input-block" id="incomeBlock">
-      <div id="incomeDisplay"></div>
+      <div id="incomeFields"></div>
     </div>
 
+    <!-- Expenses -->
     <div class="input-block" id="expenseBlock">
-      <div id="expenseDisplay"></div>
+      <div id="familyExpenseBlock">Family Expenses: 0 €</div>
+      <h4>Individual Expenses</h4>
+      <div id="personalExpenses"></div>
+      <h4>Extra Expenses (for info)</h4>
+      <div id="extraExpenses"></div>
     </div>
   </div>
 </section>
 
-<script type="module" src="main.js"></script>
+<script src="main.js"></script>
 </body>
 </html>
