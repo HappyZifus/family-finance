@@ -21,71 +21,50 @@ function selectPerson(person) {
 }
 
 async function loadData() {
-    const year = +document.getElementById('yearSelect').value;
-    const month = document.getElementById('monthSelect').selectedIndex + 1;
+  if (!currentPersonId) return;
 
-    // Fetch monthly finance for all users
-    let { data: financeData, error: financeErr } = await supabase
-        .from('monthly_finance_2')
-        .select('*')
-        .eq('year', year)
-        .eq('month', month);
+  // Fetch all family members for the selected month/year
+  const { data: allData, error: fetchError } = await supabase
+    .from('monthly_finance_2')
+    .select('*')
+    .eq('year', currentYear)
+    .eq('month', currentMonth);
 
-    if (financeErr) { console.error(financeErr); return; }
+  if (fetchError) {
+    console.error(fetchError);
+    return;
+  }
 
-    // Fetch start/end cash
-    let { data: cashData, error: cashErr } = await supabase
-        .from('total_cash')
-        .select('*')
-        .eq('year', year)
-        .eq('month', month);
+  if (!allData || allData.length === 0) return;
 
-    if (cashErr) { console.error(cashErr); return; }
+  // Find the selected person's row
+  const personData = allData.find(d => d.user_name === currentPersonId) || {};
 
-    const personData = financeData.find(r => r.user_name === peopleMap[currentPerson]);
-    const cashPerson = cashData.find(c => c.user_id === personData?.user_id);
+  // Safely extract numeric values with fallback to 0
+  const startCash = +personData.amount_start || 0;
+  const endCash = +personData.amount_end || 0;
+  const incomePercent = +personData.income_percent || 0;
+  const fairShare = +personData.fair_share || 0;
+  const diffExpense = +personData.difference || 0;
+  const personIncome = +personData.sum_income || 0;
+  const personExpense = +personData.sum_expenses || 0;
 
-    // Populate stats
-    document.getElementById('startCash').textContent = cashPerson?.amount_start?.toFixed(2) ?? '0';
-    const endCash = (cashPerson?.amount_start ?? 0) + (personData?.sum_income ?? 0) - (personData?.sum_expenses ?? 0);
-    document.getElementById('endCash').textContent = endCash.toFixed(2);
-    document.getElementById('incomePercent').textContent = personData?.income_percent?.toFixed(2) ?? '0';
-    document.getElementById('totalFamilyExpense').textContent = personData?.family_total_expense?.toFixed(2) ?? '0';
-    document.getElementById('fairExpense').textContent = personData?.fair_share?.toFixed(2) ?? '0';
-    const difference = (personData?.fair_share ?? 0) - (personData?.sum_expenses ?? 0);
-    document.getElementById('diffExpense').textContent = difference.toFixed(2);
+  // Calculate total family expense
+  const totalFamilyExpense = allData.reduce((sum, d) => sum + (+d.sum_expenses || 0), 0);
 
-    // Populate income lines
-    const incomeContainer = document.getElementById('incomeFields');
-    incomeContainer.innerHTML = '';
-    if (personData) {
-        const div = document.createElement('div');
-        div.classList.add('income-line');
-        div.innerHTML = `<input type="text" readonly value="Income" class="income-source">
-                         <input type="number" readonly value="${personData.sum_income.toFixed(2)}" class="income-amount">`;
-        incomeContainer.appendChild(div);
-    }
+  // Update stats in the DOM
+  document.getElementById("startCash").textContent = startCash.toFixed(2);
+  document.getElementById("endCash").textContent = endCash.toFixed(2);
+  document.getElementById("incomePercent").textContent = incomePercent.toFixed(2);
+  document.getElementById("fairExpense").textContent = fairShare.toFixed(2);
+  document.getElementById("diffExpense").textContent = diffExpense.toFixed(2);
+  document.getElementById("totalFamilyExpense").textContent = totalFamilyExpense.toFixed(2);
 
-    // Populate expenses
-    const expenseContainer = document.getElementById('personalExpenses');
-    expenseContainer.innerHTML = '';
-    if (personData) {
-        const div = document.createElement('div');
-        div.classList.add('expense-line');
-        div.innerHTML = `<input type="number" readonly value="${personData.sum_expenses.toFixed(2)}" class="personal-expense">`;
-        expenseContainer.appendChild(div);
-    }
-
-    // Extra expenses (for display)
-    const extraContainer = document.getElementById('extraExpenses');
-    extraContainer.innerHTML = '';
-    if (personData) {
-        const div = document.createElement('div');
-        div.classList.add('extra-line');
-        div.innerHTML = `<input type="number" readonly value="0" class="extra-expense">`;
-        extraContainer.appendChild(div);
-    }
+  // Display selected person's income/expense
+  document.getElementById('incomeDisplay').innerHTML = `<div class="income-item">Total Income: ${personIncome.toFixed(2)} €</div>`;
+  document.getElementById('expenseDisplay').innerHTML = `<div class="expense-item">Total Expenses: ${personExpense.toFixed(2)} €</div>`;
 }
+
 
 // Initial load
 loadData();
