@@ -1,112 +1,97 @@
-/* --- Navigation Bar --- */
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    background: #f5f5f5;
+}
+
+/* Navigation */
 nav {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
+    top: 0; left:0; right:0;
     height: 64px;
-    background: #FFFFFF;
+    background: #fff;
     border-bottom: 1px solid #E0E0E0;
-    z-index: 10;
-}
-
-/* --- Person Buttons --- */
-.selector-blocks {
-    display: flex;
-    gap: 16px;
-    padding: 12px;
-}
-
-.selector-block {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 120px;
-    height: 40px;
-    background: #FFFFFF;
-    border: 1px solid #E0E0E0;
-    border-radius: 8px;
-    cursor: pointer;
-    user-select: none;
-    transition: background 0.2s, border 0.2s;
+    padding-left: 16px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
 }
 
-.selector-block.active {
-    background: #E0F7FA;
-    border-color: #00ACC1;
-}
-
-/* --- Month/Year selectors --- */
-.date-selectors {
-    display: flex;
-    gap: 12px;
-    margin-top: 12px;
-}
-
-.date-selectors select {
-    padding: 8px 12px;
-    border: 1px solid #E0E0E0;
-    border-radius: 8px;
-    background: #FFFFFF;
-    cursor: pointer;
-}
-
-/* --- Cards Section --- */
-.cards {
-    display: flex;
-    flex-direction: row;
-    gap: 32px;
+/* Person selectors */
+.person-selectors {
     position: absolute;
-    top: 168px;
-    left: 80px;
-    right: 81px;
-    height: 172px;
-}
-
-.card {
-    flex: 1;
-    background: #FFFFFF;
-    border: 1px solid #E0E0E0;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.04);
-    border-radius: 8px;
-    padding: 16px;
+    top: 76px;
+    left: 1047px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
     gap: 8px;
 }
 
-/* --- Income & Expenses List --- */
-.income-list, .expense-list {
-    box-sizing: border-box;
-    background: #FFFFFF;
+.selector-block {
+    padding: 12px 16px;
     border: 1px solid #E0E0E0;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.04);
     border-radius: 8px;
-    padding: 24px;
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+}
+
+.selector-block.active {
+    background: #1976d2;
+    color: white;
+    font-weight: bold;
+}
+
+/* Month/Year selectors */
+.date-selectors {
+    position: absolute;
+    top: 76px;
+    left: 679px;
     display: flex;
-    flex-direction: column;
     gap: 16px;
 }
 
-/* --- Individual List Items --- */
-.income-item, .expense-item {
+/* Cards */
+.cards {
     display: flex;
-    justify-content: space-between;
+    gap: 16px;
+    position: absolute;
+    left: 80px;
 }
 
-/* --- Top Stats --- */
 .top-stats {
-    display: flex;
-    gap: 32px;
-    position: absolute;
-    top: 72px;
-    left: 514px;
-    right: 22px;
-    height: 80px;
-    background: #FFFFFF;
+    top: 168px;
+}
+
+.lists {
+    top: 356px;
+    height: 448px;
+}
+
+.card {
+    padding: 24px;
+    background: #fff;
     border: 1px solid #E0E0E0;
     box-shadow: 0px 4px 12px rgba(0,0,0,0.04);
     border-radius: 8px;
-    padding: 16px;
+}
+
+/* Lists */
+.income-list, .expense-list {
+    flex: 1;
+    padding: 24px;
+    background: #fff;
+    border: 1px solid #E0E0E0;
+    border-radius: 8px;
+    overflow-y: auto;
+}
+
+.income-item, .expense-item {
+    padding: 8px;
+    border-bottom: 1px solid #e0e0e0;
 }

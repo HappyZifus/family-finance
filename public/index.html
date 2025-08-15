@@ -1,24 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Family Finance</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<title>Family Finance</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<!-- Navigation Bar -->
+<!-- Navigation -->
 <nav>
-    <h2 style="padding:16px;">Family Finance</h2>
+    <h2>Family Finance</h2>
 </nav>
 
-<!-- Person Selection -->
-<div class="selector-blocks">
+<!-- Person selection -->
+<div class="person-selectors">
     <div class="selector-block" id="personLesha">Lesha</div>
     <div class="selector-block" id="personLena">Lena</div>
 </div>
 
-<!-- Month/Year Selection -->
+<!-- Month/Year selectors -->
 <div class="date-selectors">
     <select id="monthSelect">
         <option value="1">January</option>
@@ -42,23 +42,23 @@
     </select>
 </div>
 
-<!-- Top Statistics Cards -->
+<!-- Top statistics cards -->
 <div class="cards top-stats">
-    <div class="card" id="startCashCard">Start Cash: <span id="startCash">0</span></div>
-    <div class="card" id="endCashCard">End Cash: <span id="endCash">0</span></div>
-    <div class="card" id="incomePercentCard">Income %: <span id="incomePercent">0</span></div>
-    <div class="card" id="differenceCard">Difference: <span id="difference">0</span></div>
+    <div class="card">Start Cash: <span id="startCash">0</span></div>
+    <div class="card">End Cash: <span id="endCash">0</span></div>
+    <div class="card">Income %: <span id="incomePercent">0</span></div>
+    <div class="card">Fair Share: <span id="fairShare">0</span></div>
+    <div class="card">Difference: <span id="difference">0</span></div>
 </div>
 
-<!-- Income and Expense Lists -->
-<div class="income-list" id="incomeList">
-    <h3>Income</h3>
-    <!-- dynamically filled -->
-</div>
-
-<div class="expense-list" id="expenseList">
-    <h3>Expenses</h3>
-    <!-- dynamically filled -->
+<!-- Income and Expenses -->
+<div class="cards lists">
+    <div class="income-list" id="incomeList">
+        <h3>Income</h3>
+    </div>
+    <div class="expense-list" id="expenseList">
+        <h3>Expenses</h3>
+    </div>
 </div>
 
 <script type="module" src="main.js"></script>

@@ -2,26 +2,26 @@ import { supabase } from './supabase/supabaseClient.js';
 
 let currentPerson = null;
 let currentYear = new Date().getFullYear();
-let currentMonth = 1; // default January
+let currentMonth = new Date().getMonth() + 1;
 
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     setupPersonSelectors();
     setupMonthYearSelectors();
 
-    // select first person by default
     const firstPerson = document.querySelector('.selector-block');
-    if (firstPerson) firstPerson.click();
-
-    document.getElementById('manualTotal').addEventListener('change', updateManualTotal);
+    if(firstPerson){
+        firstPerson.click();
+    }
 });
 
 function setupPersonSelectors() {
-    const persons = document.querySelectorAll('.selector-block[id^="person"]');
+    const persons = document.querySelectorAll('.selector-block');
     persons.forEach(btn => {
         btn.addEventListener('click', () => {
             persons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            currentPerson = btn.dataset.userid; // using user_id from DB
+            currentPerson = btn.textContent.trim();
             loadData();
         });
     });
@@ -30,6 +30,9 @@ function setupPersonSelectors() {
 function setupMonthYearSelectors() {
     const monthSelect = document.getElementById('monthSelect');
     const yearSelect = document.getElementById('yearSelect');
+
+    monthSelect.value = currentMonth;
+    yearSelect.value = currentYear;
 
     monthSelect.addEventListener('change', () => {
         currentMonth = parseInt(monthSelect.value);
@@ -43,44 +46,52 @@ function setupMonthYearSelectors() {
 }
 
 async function loadData() {
-    if (!currentPerson) return;
+    if(!currentPerson) return;
 
-    const { data, error } = await supabase
-        .from('monthly_finance_2')
-        .select('*')
-        .eq('user_id', currentPerson)
-        .eq('year', currentYear)
-        .eq('month', currentMonth)
-        .single();
+    try {
+        const { data, error } = await supabase
+            .from('monthly_finance_2')
+            .select('*')
+            .eq('user_name', currentPerson)
+            .eq('year', currentYear)
+            .eq('month', currentMonth)
+            .single();
 
-    if (error) {
-        console.error('Error loading data:', error);
-        return;
+        if(error) throw error;
+
+        if(data){
+            document.getElementById('startCash').textContent = data.amount_start ?? 0;
+            document.getElementById('endCash').textContent = data.amount_end ?? 0;
+            document.getElementById('incomePercent').textContent = data.income_percent?.toFixed(2) ?? 0;
+            document.getElementById('fairShare').textContent = data.fair_share?.toFixed(2) ?? 0;
+            document.getElementById('difference').textContent = data.difference?.toFixed(2) ?? 0;
+
+            renderIncome(data.income_list || []);
+            renderExpenses(data.expense_list || []);
+        }
+    } catch (err) {
+        console.error('Error loading data:', err.message);
     }
-
-    renderCards(data);
 }
 
-function renderCards(data) {
-    document.getElementById('sumIncome').textContent = data.sum_income || 0;
-    document.getElementById('manualTotal').value = data.sum_expenses || 0;
-    document.getElementById('startCash').textContent = data.amount_start || 0;
-    document.getElementById('endCash').textContent = data.amount_end || 0;
-    document.getElementById('incomePercent').textContent = (data.income_percent || 0).toFixed(2) + '%';
-    document.getElementById('fairShare').textContent = (data.fair_share || 0).toFixed(2);
-    document.getElementById('difference').textContent = (data.difference || 0).toFixed(2);
+function renderIncome(list){
+    const container = document.getElementById('incomeList');
+    container.innerHTML = '<h3>Income</h3>';
+    list.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'income-item';
+        div.textContent = `${item.type}: ${item.amount}`;
+        container.appendChild(div);
+    });
 }
 
-async function updateManualTotal(e) {
-    const newTotal = parseFloat(e.target.value) || 0;
-
-    const { error } = await supabase
-        .from('expenses')
-        .update({ amount: newTotal })
-        .eq('user_id', currentPerson)
-        .eq('year', currentYear)
-        .eq('month', currentMonth);
-
-    if (error) console.error('Error updating total expenses:', error);
-    else loadData(); // refresh cards after update
+function renderExpenses(list){
+    const container = document.getElementById('expenseList');
+    container.innerHTML = '<h3>Expenses</h3>';
+    list.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'expense-item';
+        div.textContent = `${item.type}: ${item.amount}`;
+        container.appendChild(div);
+    });
 }
