@@ -2,72 +2,99 @@ import { supabase } from './supabase/supabaseClient.js';
 
 let currentPersonId = null;
 let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth() + 1; // January = 1
+let currentMonth = new Date().getMonth() + 1; // JS months 0–11
 
-document.addEventListener('DOMContentLoaded', () => {
-    setupPersonSelectors();
-    setupMonthYearSelectors();
-    // Select first person by default
-    const firstPersonBtn = document.querySelector('.selector-block');
-    if (firstPersonBtn) firstPersonBtn.click();
+document.addEventListener('DOMContentLoaded', async () => {
+  await setupPersonSelectors();
+  setupMonthYearSelectors();
 });
 
-function setupPersonSelectors() {
-    const personBtns = document.querySelectorAll('.selector-block[id^="person"]');
-    personBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            personBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentPersonId = btn.dataset.userid; // use user_id
-            loadData();
-        });
+// Load users from Supabase to create buttons
+async function setupPersonSelectors() {
+  const { data: users, error } = await supabase.from('users').select('id,name');
+  if (error) return console.error('Error fetching users:', error);
+
+  const container = document.getElementById('personSelectors');
+  container.innerHTML = '';
+
+  users.forEach((u, idx) => {
+    const btn = document.createElement('div');
+    btn.classList.add('selector-block');
+    btn.textContent = u.name;
+    btn.dataset.userid = u.id;
+    btn.addEventListener('click', () => {
+      currentPersonId = u.id;
+      container.querySelectorAll('.selector-block').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadData();
     });
+    container.appendChild(btn);
+
+    // select first by default
+    if (idx === 0) {
+      btn.click();
+    }
+  });
 }
 
 function setupMonthYearSelectors() {
-    const monthSelect = document.getElementById('monthSelect');
-    const yearSelect = document.getElementById('yearSelect');
+  const monthSelect = document.getElementById('monthSelect');
+  const yearSelect = document.getElementById('yearSelect');
 
-    if (monthSelect) {
-        monthSelect.addEventListener('change', () => {
-            currentMonth = parseInt(monthSelect.value);
-            loadData();
-        });
-    }
-    if (yearSelect) {
-        yearSelect.addEventListener('change', () => {
-            currentYear = parseInt(yearSelect.value);
-            loadData();
-        });
-    }
+  // populate month/year options
+  for (let m = 1; m <= 12; m++) {
+    const opt = document.createElement('option');
+    opt.value = m;
+    opt.textContent = m;
+    if (m === currentMonth) opt.selected = true;
+    monthSelect.appendChild(opt);
+  }
+
+  const startYear = 2023;
+  const endYear = new Date().getFullYear();
+  for (let y = startYear; y <= endYear; y++) {
+    const opt = document.createElement('option');
+    opt.value = y;
+    opt.textContent = y;
+    if (y === currentYear) opt.selected = true;
+    yearSelect.appendChild(opt);
+  }
+
+  monthSelect.addEventListener('change', () => {
+    currentMonth = parseInt(monthSelect.value);
+    loadData();
+  });
+  yearSelect.addEventListener('change', () => {
+    currentYear = parseInt(yearSelect.value);
+    loadData();
+  });
 }
 
+// Load data from the new view
 async function loadData() {
-    if (!currentPersonId) return;
+  if (!currentPersonId) return;
 
-    try {
-        const { data, error } = await supabase
-            .from('monthly_finance_2')
-            .select('*')
-            .eq('user_id', currentPersonId)
-            .eq('year', currentYear)
-            .eq('month', currentMonth)
-            .single(); // we expect one row per user per month
+  const { data, error } = await supabase
+    .from('monthly_finance_2')
+    .select('*')
+    .eq('user_id', currentPersonId)
+    .eq('year', currentYear)
+    .eq('month', currentMonth)
+    .single(); // only one row per user/month
 
-        if (error) throw error;
+  if (error) return console.error('Error loading monthly finance:', error);
 
-        renderFinanceData(data);
-    } catch (err) {
-        console.error('Error fetching finance data:', err.message);
-    }
+  renderData(data);
 }
 
-function renderFinanceData(row) {
-    // Example: Update fields in your HTML
-    document.getElementById('startCash').textContent = row.start_cash ?? 0;
-    document.getElementById('endCash').textContent = row.end_cash ?? 0;
-    document.getElementById('income').textContent = row.income ?? 0;
-    document.getElementById('expenses').textContent = row.expenses ?? 0;
-    document.getElementById('fairShare').textContent = row.fair_share ?? 0;
-    document.getElementById('difference').textContent = row.difference ?? 0;
+function renderData(data) {
+  if (!data) return;
+
+  document.getElementById('income').textContent = data.sum_income ?? 0;
+  document.getElementById('expenses').textContent = data.sum_expenses ?? 0;
+  document.getElementById('startCash').textContent = data.start_cash ?? 0;
+  document.getElementById('endCash').textContent = data.end_cash ?? 0;
+  document.getElementById('incomePercent').textContent = data.income_percent?.toFixed(2) ?? '0';
+  document.getElementById('fairShare').textContent = data.fair_share?.toFixed(2) ?? '0';
+  document.getElementById('difference').textContent = data.difference?.toFixed(2) ?? '0';
 }
