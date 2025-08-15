@@ -1,97 +1,64 @@
 import { supabase } from './supabase/supabaseClient.js';
 
-let currentPerson = null;
-let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth() + 1;
+let currentPersonId = null;
+let currentYear = 2025;
+let currentMonth = 1;
 
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    setupPersonSelectors();
-    setupMonthYearSelectors();
+const personButtons = {
+  'person1': null,
+  'person2': null
+};
 
-    const firstPerson = document.querySelector('.selector-block');
-    if(firstPerson){
-        firstPerson.click();
-    }
+document.addEventListener('DOMContentLoaded', async () => {
+  personButtons['person1'] = document.getElementById('person1');
+  personButtons['person2'] = document.getElementById('person2');
+
+  personButtons['person1'].addEventListener('click', ()=>selectPerson('Lesha'));
+  personButtons['person2'].addEventListener('click', ()=>selectPerson('Lena'));
+
+  document.getElementById('yearSelect').addEventListener('change', ()=>{ currentYear=+document.getElementById('yearSelect').value; loadData(); });
+  document.getElementById('monthSelect').addEventListener('change', ()=>{ currentMonth=document.getElementById('monthSelect').selectedIndex+1; loadData(); });
+
+  selectPerson('Lesha');
 });
 
-function setupPersonSelectors() {
-    const persons = document.querySelectorAll('.selector-block');
-    persons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            persons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentPerson = btn.textContent.trim();
-            loadData();
-        });
-    });
+function selectPerson(name){
+  currentPersonId = name;
+  Object.keys(personButtons).forEach(k=>{
+    personButtons[k].classList.toggle('active', personButtons[k].textContent===name);
+  });
+  loadData();
 }
 
-function setupMonthYearSelectors() {
-    const monthSelect = document.getElementById('monthSelect');
-    const yearSelect = document.getElementById('yearSelect');
+async function loadData(){
+  if(!currentPersonId) return;
 
-    monthSelect.value = currentMonth;
-    yearSelect.value = currentYear;
+  const { data, error } = await supabase
+    .from('monthly_finance_2')
+    .select('*')
+    .eq('user_name', currentPersonId)
+    .eq('year', currentYear)
+    .eq('month', currentMonth)
+    .limit(1)
+    .single();
 
-    monthSelect.addEventListener('change', () => {
-        currentMonth = parseInt(monthSelect.value);
-        loadData();
-    });
+  if(error){
+    console.error(error);
+    return;
+  }
 
-    yearSelect.addEventListener('change', () => {
-        currentYear = parseInt(yearSelect.value);
-        loadData();
-    });
-}
+  if(!data) return;
 
-async function loadData() {
-    if(!currentPerson) return;
+  document.getElementById("startCash").textContent = (+data.amount_start).toFixed(2);
+  document.getElementById("endCash").textContent = (+data.amount_end).toFixed(2);
+  document.getElementById("incomePercent").textContent = (+data.income_percent).toFixed(2);
+  document.getElementById("totalFamilyExpense").textContent = (+data.sum_expenses).toFixed(2);
+  document.getElementById("fairExpense").textContent = (+data.fair_share).toFixed(2);
+  document.getElementById("diffExpense").textContent = (+data.difference).toFixed(2);
 
-    try {
-        const { data, error } = await supabase
-            .from('monthly_finance_2')
-            .select('*')
-            .eq('user_name', currentPerson)
-            .eq('year', currentYear)
-            .eq('month', currentMonth)
-            .single();
+  const incomeDiv = document.getElementById('incomeDisplay');
+  incomeDiv.innerHTML = `<div class="income-item">Total Income: ${(+data.sum_income).toFixed(2)} €</div>`;
 
-        if(error) throw error;
-
-        if(data){
-            document.getElementById('startCash').textContent = data.amount_start ?? 0;
-            document.getElementById('endCash').textContent = data.amount_end ?? 0;
-            document.getElementById('incomePercent').textContent = data.income_percent?.toFixed(2) ?? 0;
-            document.getElementById('fairShare').textContent = data.fair_share?.toFixed(2) ?? 0;
-            document.getElementById('difference').textContent = data.difference?.toFixed(2) ?? 0;
-
-            renderIncome(data.income_list || []);
-            renderExpenses(data.expense_list || []);
-        }
-    } catch (err) {
-        console.error('Error loading data:', err.message);
-    }
-}
-
-function renderIncome(list){
-    const container = document.getElementById('incomeList');
-    container.innerHTML = '<h3>Income</h3>';
-    list.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'income-item';
-        div.textContent = `${item.type}: ${item.amount}`;
-        container.appendChild(div);
-    });
-}
-
-function renderExpenses(list){
-    const container = document.getElementById('expenseList');
-    container.innerHTML = '<h3>Expenses</h3>';
-    list.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'expense-item';
-        div.textContent = `${item.type}: ${item.amount}`;
-        container.appendChild(div);
-    });
+  const expenseDiv = document.getElementById('expenseDisplay');
+  expenseDiv.innerHTML = `<div class="expense-item">Total Expenses: ${(+data.sum_expenses).toFixed(2)} €</div>`;
 }

@@ -7,59 +7,50 @@
 </head>
 <body>
 
-<!-- Navigation -->
-<nav>
-    <h2>Family Finance</h2>
-</nav>
+<header>Family Finance</header>
 
-<!-- Person selection -->
-<div class="person-selectors">
-    <div class="selector-block" id="personLesha">Lesha</div>
-    <div class="selector-block" id="personLena">Lena</div>
+<div id="monthStats">
+  <div class="stat-block">Start Cash<br><span class="stat-value" id="startCash">0</span> €</div>
+  <div class="stat-block">End Cash<br><span class="stat-value" id="endCash">0</span> €</div>
+  <div class="stat-block">Income %<br><span class="stat-value" id="incomePercent">0</span>%</div>
+  <div class="stat-block">Total Family Expense<br><span class="stat-value" id="totalFamilyExpense">0</span> €</div>
+  <div class="stat-block">Fair Share<br><span class="stat-value" id="fairExpense">0</span> €</div>
+  <div class="stat-block">Difference<br><span class="stat-value" id="diffExpense">0</span> €</div>
 </div>
 
-<!-- Month/Year selectors -->
-<div class="date-selectors">
-    <select id="monthSelect">
-        <option value="1">January</option>
-        <option value="2">February</option>
-        <option value="3">March</option>
-        <option value="4">April</option>
-        <option value="5">May</option>
-        <option value="6">June</option>
-        <option value="7">July</option>
-        <option value="8">August</option>
-        <option value="9">September</option>
-        <option value="10">October</option>
-        <option value="11">November</option>
-        <option value="12">December</option>
-    </select>
-
-    <select id="yearSelect">
-        <option value="2025">2025</option>
-        <option value="2024">2024</option>
-        <option value="2023">2023</option>
-    </select>
-</div>
-
-<!-- Top statistics cards -->
-<div class="cards top-stats">
-    <div class="card">Start Cash: <span id="startCash">0</span></div>
-    <div class="card">End Cash: <span id="endCash">0</span></div>
-    <div class="card">Income %: <span id="incomePercent">0</span></div>
-    <div class="card">Fair Share: <span id="fairShare">0</span></div>
-    <div class="card">Difference: <span id="difference">0</span></div>
-</div>
-
-<!-- Income and Expenses -->
-<div class="cards lists">
-    <div class="income-list" id="incomeList">
-        <h3>Income</h3>
+<section id="input">
+  <div class="top-selectors">
+    <div class="selector-block" id="person1">Lesha</div>
+    <div class="selector-block" id="person2">Lena</div>
+    <div class="selector-block">
+      <label>Year:</label>
+      <select id="yearSelect"><option>2025</option><option>2026</option></select>
     </div>
-    <div class="expense-list" id="expenseList">
-        <h3>Expenses</h3>
+    <div class="selector-block">
+      <label>Month:</label>
+      <select id="monthSelect">
+        <option>January</option><option>February</option><option>March</option><option>April</option>
+        <option>May</option><option>June</option><option>July</option><option>August</option>
+        <option>September</option><option>October</option><option>November</option><option>December</option>
+      </select>
     </div>
-</div>
+  </div>
+
+  <div class="headers">
+    <div>Income</div>
+    <div>Expenses</div>
+  </div>
+
+  <div class="input-blocks">
+    <div class="input-block" id="incomeBlock">
+      <div id="incomeDisplay"></div>
+    </div>
+
+    <div class="input-block" id="expenseBlock">
+      <div id="expenseDisplay"></div>
+    </div>
+  </div>
+</section>
 
 <script type="module" src="main.js"></script>
 </body>
