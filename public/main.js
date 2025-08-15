@@ -1,33 +1,23 @@
-import { supabase } from './supabase/supabaseClient.js';
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 
-let currentPersonId = null;
-let currentYear = 2025;
-let currentMonth = 1;
+const supabaseUrl = 'https://mlkkehhdymhqctxlioov.supabase.co';
+const supabaseKey = 'YOUR_ANON_KEY_HERE'; // replace with anon key if RLS allows read
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-const personButtons = {
-  'person1': null,
-  'person2': null
-};
+let currentPerson = 'me'; // 'me' = Lesha, 'wife' = Lena
 
-document.addEventListener('DOMContentLoaded', async () => {
-  personButtons['person1'] = document.getElementById('person1');
-  personButtons['person2'] = document.getElementById('person2');
+const peopleMap = { me: 'Lesha', wife: 'Lena' };
 
-  personButtons['person1'].addEventListener('click', ()=>selectPerson('Lesha'));
-  personButtons['person2'].addEventListener('click', ()=>selectPerson('Lena'));
+document.getElementById('personMe').addEventListener('click', () => selectPerson('me'));
+document.getElementById('personWife').addEventListener('click', () => selectPerson('wife'));
+document.getElementById('yearSelect').addEventListener('change', loadData);
+document.getElementById('monthSelect').addEventListener('change', loadData);
 
-  document.getElementById('yearSelect').addEventListener('change', ()=>{ currentYear=+document.getElementById('yearSelect').value; loadData(); });
-  document.getElementById('monthSelect').addEventListener('change', ()=>{ currentMonth=document.getElementById('monthSelect').selectedIndex+1; loadData(); });
-
-  selectPerson('Lesha');
-});
-
-function selectPerson(name){
-  currentPersonId = name;
-  Object.keys(personButtons).forEach(k=>{
-    personButtons[k].classList.toggle('active', personButtons[k].textContent===name);
-  });
-  loadData();
+function selectPerson(person) {
+    currentPerson = person;
+    document.getElementById('personMe').classList.toggle('active', person === 'me');
+    document.getElementById('personWife').classList.toggle('active', person === 'wife');
+    loadData();
 }
 
 async function loadData() {
@@ -75,34 +65,6 @@ async function loadData() {
   document.getElementById('expenseDisplay').innerHTML = `<div class="expense-item">Total Expenses: ${personExpense.toFixed(2)} €</div>`;
 }
 
-  if(!currentPersonId) return;
 
-  const { data, error } = await supabase
-    .from('monthly_finance_2')
-    .select('*')
-    .eq('user_name', currentPersonId)
-    .eq('year', currentYear)
-    .eq('month', currentMonth)
-    .limit(1)
-    .single();
-
-  if(error){
-    console.error(error);
-    return;
-  }
-
-  if(!data) return;
-
-  document.getElementById("startCash").textContent = (+data.amount_start).toFixed(2);
-  document.getElementById("endCash").textContent = (+data.amount_end).toFixed(2);
-  document.getElementById("incomePercent").textContent = (+data.income_percent).toFixed(2);
-  document.getElementById("totalFamilyExpense").textContent = (+data.sum_expenses).toFixed(2);
-  document.getElementById("fairExpense").textContent = (+data.fair_share).toFixed(2);
-  document.getElementById("diffExpense").textContent = (+data.difference).toFixed(2);
-
-  const incomeDiv = document.getElementById('incomeDisplay');
-  incomeDiv.innerHTML = `<div class="income-item">Total Income: ${(+data.sum_income).toFixed(2)} €</div>`;
-
-  const expenseDiv = document.getElementById('expenseDisplay');
-  expenseDiv.innerHTML = `<div class="expense-item">Total Expenses: ${(+data.sum_expenses).toFixed(2)} €</div>`;
-
+// Initial load
+loadData();
