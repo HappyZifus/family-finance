@@ -1,86 +1,81 @@
 body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  padding: 0;
-  background: #f8f9fa;
+    font-family: Arial, sans-serif;
+    background: #f0f2f5;
+    margin: 0;
+    padding: 0;
 }
 
 header {
-  background: #007bff;
-  color: white;
-  padding: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
+    background: #3f51b5;
+    color: #fff;
+    padding: 15px;
 }
 
 header h1 {
-  margin: 0 20px 0 0;
+    margin: 0 0 10px 0;
 }
 
-.top-selectors {
-  display: flex;
-  gap: 10px;
-  margin: 10px 0;
+.selectors {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-.selector-block {
-  padding: 8px 16px;
-  background: white;
-  color: #007bff;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: bold;
-  user-select: none;
-  transition: all 0.2s;
+.person-buttons button {
+    padding: 5px 15px;
+    margin-right: 10px;
+    border: none;
+    border-radius: 4px;
+    background: #e0e0e0;
+    cursor: pointer;
 }
 
-.selector-block.active {
-  background: #0056b3;
-  color: white;
+.person-buttons button.active {
+    background: #ff9800;
+    color: #fff;
 }
 
-.selector-block:hover {
-  opacity: 0.8;
+.month-year-select select {
+    padding: 5px 10px;
+    margin-left: 5px;
+    border-radius: 4px;
 }
 
-#topStats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10px;
-  padding: 20px;
+.top-stats {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    margin: 20px;
 }
 
 .stat-block {
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  text-align: center;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  font-weight: bold;
+    background: #fff;
+    padding: 15px;
+    margin: 5px;
+    border-radius: 6px;
+    min-width: 120px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-section {
-  margin: 20px;
-  background: white;
-  padding: 15px;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+.input-section {
+    display: flex;
+    justify-content: space-around;
+    margin: 20px;
 }
 
-h2 {
-  margin-top: 0;
+.income-block, .expense-block {
+    background: #fff;
+    padding: 15px;
+    border-radius: 6px;
+    width: 45%;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-#incomeList, #expenseList, #yearlyStatsContainer {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.income-item, .expense-item {
-  padding: 8px;
-  background: #e9ecef;
-  border-radius: 6px;
+.bottom-stats {
+    background: #fff;
+    margin: 20px;
+    padding: 15px;
+    border-radius: 6px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }

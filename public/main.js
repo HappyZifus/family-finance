@@ -2,93 +2,91 @@ import { supabase } from './supabase/supabaseClient.js';
 
 let currentPersonId = null;
 let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth() + 1;
+let currentMonth = 1;
 
+// DOM Elements
+const startCashEl = document.getElementById('startCash');
+const endCashEl = document.getElementById('endCash');
+const incomePercentEl = document.getElementById('incomePercent');
+const totalExpensesEl = document.getElementById('totalExpenses');
+const fairShareEl = document.getElementById('fairShare');
+const differenceEl = document.getElementById('difference');
+
+const incomeListEl = document.getElementById('incomeList');
+const expenseListEl = document.getElementById('expenseList');
+const yearlySummaryEl = document.getElementById('yearlySummary');
+
+// Setup selectors
 document.addEventListener('DOMContentLoaded', () => {
-  setupPersonSelectors();
-  setupMonthYearSelectors();
+    setupPersonButtons();
+    setupMonthYearSelectors();
+    document.querySelector('.person-btn')?.click();
 });
 
-function setupPersonSelectors() {
-  const persons = [
-    { id: 'a833b039-f440-4474-b566-3333e73398c8', name: 'Lesha' },
-    { id: '5148e3c8-adab-484c-975c-f2f5b494fb4f', name: 'Lena' }
-  ];
-
-  const container = document.getElementById('personSelectors');
-  persons.forEach((p, idx) => {
-    const btn = document.createElement('div');
-    btn.classList.add('selector-block');
-    btn.textContent = p.name;
-    btn.dataset.userid = p.id;
-    btn.addEventListener('click', () => {
-      currentPersonId = p.id;
-      container.querySelectorAll('.selector-block').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      loadData();
+function setupPersonButtons() {
+    const buttons = document.querySelectorAll('.person-btn');
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentPersonId = btn.dataset.id;
+            loadData();
+        });
     });
-    container.appendChild(btn);
-    if (idx === 0) btn.click(); // default selection
-  });
 }
 
 function setupMonthYearSelectors() {
-  const monthSelect = document.getElementById('monthSelect');
-  const yearSelect = document.getElementById('yearSelect');
+    const monthSelect = document.getElementById('monthSelect');
+    const yearSelect = document.getElementById('yearSelect');
 
-  for (let m = 1; m <= 12; m++) {
-    const opt = document.createElement('option');
-    opt.value = m;
-    opt.textContent = m;
-    if (m === currentMonth) opt.selected = true;
-    monthSelect.appendChild(opt);
-  }
+    monthSelect.addEventListener('change', () => {
+        currentMonth = parseInt(monthSelect.value);
+        loadData();
+    });
 
-  const startYear = 2023;
-  const endYear = new Date().getFullYear();
-  for (let y = startYear; y <= endYear; y++) {
-    const opt = document.createElement('option');
-    opt.value = y;
-    opt.textContent = y;
-    if (y === currentYear) opt.selected = true;
-    yearSelect.appendChild(opt);
-  }
-
-  monthSelect.addEventListener('change', () => {
-    currentMonth = parseInt(monthSelect.value);
-    loadData();
-  });
-  yearSelect.addEventListener('change', () => {
-    currentYear = parseInt(yearSelect.value);
-    loadData();
-  });
+    yearSelect.addEventListener('change', () => {
+        currentYear = parseInt(yearSelect.value);
+        loadData();
+    });
 }
 
 async function loadData() {
-  if (!currentPersonId) return;
+    if (!currentPersonId) return;
 
-  const { data, error } = await supabase
-    .from('monthly_finance_2')
-    .select('*')
-    .eq('user_id', currentPersonId)
-    .eq('year', currentYear)
-    .eq('month', currentMonth)
-    .single();
+    try {
+        const { data, error } = await supabase
+            .from('monthly_finance_2')
+            .select('*')
+            .eq('user_id', currentPersonId)
+            .eq('year', currentYear)
+            .eq('month', currentMonth)
+            .single();
 
-  if (error) {
-    console.error('Fetch error:', error);
-    return;
-  }
+        if (error) throw error;
 
-  renderData(data);
+        // Top stats
+        startCashEl.textContent = data.amount_start ?? 0;
+        endCashEl.textContent = data.amount_end ?? 0;
+        incomePercentEl.textContent = `${data.income_percent?.toFixed(1) ?? 0}%`;
+        totalExpensesEl.textContent = data.sum_expenses ?? 0;
+        fairShareEl.textContent = data.fair_share ?? 0;
+        differenceEl.textContent = data.difference ?? 0;
+
+        // Income & Expenses
+        renderList(incomeListEl, data.sum_income, 'Income');
+        renderList(expenseListEl, data.sum_expenses, 'Expense');
+
+        // Yearly summary placeholder
+        yearlySummaryEl.textContent = `Income %: ${data.income_percent?.toFixed(1) ?? 0}%, Fair Share: ${data.fair_share ?? 0}`;
+
+    } catch (err) {
+        console.error('Error fetching data:', err.message);
+    }
 }
 
-function renderData(data) {
-  document.getElementById('incomeValue').textContent = data.sum_income ?? 0;
-  document.getElementById('expensesValue').textContent = data.sum_expenses ?? 0;
-  document.getElementById('startCashValue').textContent = data.amount_start ?? 0;
-  document.getElementById('endCashValue').textContent = data.amount_end ?? 0;
-  document.getElementById('incomePercentValue').textContent = data.income_percent ?? 0;
-  document.getElementById('fairShareValue').textContent = data.fair_share ?? 0;
-  document.getElementById('differenceValue').textContent = data.difference ?? 0;
+function renderList(container, value, type) {
+    container.innerHTML = '';
+    const div = document.createElement('div');
+    div.textContent = `${type}: ${value}`;
+    container.appendChild(div);
 }
