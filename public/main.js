@@ -9,49 +9,60 @@ const personButtons = {
   'person2': null
 };
 
+let usersList = []; // [{id,name},...]
+
 document.addEventListener('DOMContentLoaded', async () => {
-  // инициализация кнопок выбора пользователя
+  // 1. загрузка пользователей
+  const { data } = await supabase.from('users').select('id, name');
+  usersList = data;
+
+  // 2. инициализация кнопок
   personButtons['person1'] = document.getElementById('person1');
   personButtons['person2'] = document.getElementById('person2');
 
-  personButtons['person1'].addEventListener('click', ()=>selectPerson('Lesha'));
-  personButtons['person2'].addEventListener('click', ()=>selectPerson('Lena'));
+  usersList.forEach((u, idx) => {
+    const btn = personButtons['person'+(idx+1)];
+    btn.textContent = u.name;
+    btn.dataset.userid = u.id;
+    btn.addEventListener('click', () => selectPersonById(u.id));
+  });
 
-  // выбор года
-  document.getElementById('yearSelect').addEventListener('change', ()=>{
+  // 3. обработчики года и месяца
+  document.getElementById('yearSelect').addEventListener('change', () => {
     currentYear = +document.getElementById('yearSelect').value;
     loadData();
     renderIncomeInputs();
   });
 
-  // выбор месяца
-  document.getElementById('monthSelect').addEventListener('change', ()=>{
+  document.getElementById('monthSelect').addEventListener('change', () => {
     currentMonth = document.getElementById('monthSelect').selectedIndex + 1;
     loadData();
     renderIncomeInputs();
   });
 
-  // первый запуск с дефолтным пользователем
-  selectPerson('Lesha');
+  // 4. выбрать первого пользователя по умолчанию
+  selectPersonById(usersList[0].id);
 });
 
-function selectPerson(name){
-  currentPersonId = name;
-  Object.keys(personButtons).forEach(k=>{
-    personButtons[k].classList.toggle('active', personButtons[k].textContent===name);
+function selectPersonById(id){
+  currentPersonId = id;
+  Object.keys(personButtons).forEach(k => {
+    personButtons[k].classList.toggle(
+      'active',
+      personButtons[k].dataset.userid === id
+    );
   });
   loadData();
   renderIncomeInputs();
 }
 
-
-async function loadData(){
+async function loadData() {
   if(!currentPersonId) return;
 
   const { data, error } = await supabase
     .from('monthly_finance_2')
     .select('*')
-    .eq('user_name', currentPersonId)
+    .eq('user_id', currentPersonId)
     .eq('year', currentYear)
     .eq('month', currentMonth)
     .limit(1)
@@ -64,31 +75,28 @@ async function loadData(){
 
   if(!data) return;
 
-  // safe print
-  document.getElementById("startCash").textContent = ((+data.start_cash) || 0).toFixed(2);
-  document.getElementById("endCash").textContent   = ((+data.end_cash) || 0).toFixed(2);
+  document.getElementById("startCash").textContent = (+data.start_cash).toFixed(2);
+  document.getElementById("endCash").textContent = (+data.end_cash).toFixed(2);
   document.getElementById("incomePercent").textContent = (+data.income_percent).toFixed(2);
   document.getElementById("totalFamilyExpense").textContent = (+data.sum_expenses).toFixed(2);
   document.getElementById("fairExpense").textContent = (+data.fair_share).toFixed(2);
   document.getElementById("diffExpense").textContent = (+data.difference).toFixed(2);
 
-  // income section now shows family_income too
   const incomeDiv = document.getElementById('incomeDisplay');
-  incomeDiv.innerHTML = `
-    <div class="income-item">Total Income: ${(+data.sum_income).toFixed(2)} €</div>
-    <div class="income-item">Family Income: ${(+data.family_income).toFixed(2)} €</div>
-  `;
+  incomeDiv.innerHTML = `<div class="income-item">Total Income: ${(+data.sum_income).toFixed(2)} €</div>
+                         <div class="income-item">Family Income: ${(+data.family_income).toFixed(2)} €</div>`;
 
-  // expenses block untouched
   const expenseDiv = document.getElementById('expenseDisplay');
   expenseDiv.innerHTML = `<div class="expense-item">Total Expenses: ${(+data.sum_expenses).toFixed(2)} €</div>`;
 }
+
+// ------------------ Income Inputs ------------------
 
 async function renderIncomeInputs(){
   const container = document.getElementById('incomeInputs');
   container.innerHTML = "";
 
-  // 1. грузим или создаем шаблон источников (user_id!)
+  // 1. грузим шаблон источников по user_id
   let { data: templateData } = await supabase
     .from('income_sources_template')
     .select('*')
@@ -96,28 +104,35 @@ async function renderIncomeInputs(){
     .eq('year', currentYear)
     .order('slot_number', {ascending: true});
 
+  // если пусто — создаем 6 строк
   if(!templateData || templateData.length === 0){
-    templateData = [];
     for(let i=1;i<=6;i++){
-      let rec = {
+      await supabase.from('income_sources_template').insert({
         user_id: currentPersonId,
         year: currentYear,
         slot_number: i,
         source: "",
         type: true
-      };
-      const { data:inserted } = await supabase.from('income_sources_template').insert(rec).select().single();
-      templateData.push(inserted);
+      });
     }
+    const res = await supabase
+      .from('income_sources_template')
+      .select('*')
+      .eq('user_id', currentPersonId)
+      .eq('year', currentYear)
+      .order('slot_number', {ascending: true});
+    templateData = res.data;
   }
 
-  // 2. получаем введенные суммы по текущему месяцу
+  // 2. загружаем реальные Amount для месяца
   const { data: incomeRows } = await supabase
     .from('income')
     .select('*')
     .eq('user_id', currentPersonId)
     .eq('year', currentYear)
     .eq('month', currentMonth);
+
+  if(!templateData) return;
 
   // 3. рисуем строки
   for(const row of templateData){
@@ -138,7 +153,7 @@ async function renderIncomeInputs(){
     container.appendChild(div);
   }
 
-  // --- events ---
+  // --- события ---
 
   // Source
   container.querySelectorAll('.income-source').forEach(inp=>{
@@ -200,6 +215,3 @@ async function renderIncomeInputs(){
     });
   });
 }
-
-
-
