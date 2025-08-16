@@ -49,16 +49,22 @@ async function loadData(){
 
   if(!data) return;
 
-  document.getElementById("startCash").textContent = (+data.start_cash).toFixed(2);
-  document.getElementById("endCash").textContent   = (+data.end_cash).toFixed(2);
+  // safe print
+  document.getElementById("startCash").textContent = ((+data.start_cash) || 0).toFixed(2);
+  document.getElementById("endCash").textContent   = ((+data.end_cash) || 0).toFixed(2);
   document.getElementById("incomePercent").textContent = (+data.income_percent).toFixed(2);
   document.getElementById("totalFamilyExpense").textContent = (+data.sum_expenses).toFixed(2);
   document.getElementById("fairExpense").textContent = (+data.fair_share).toFixed(2);
   document.getElementById("diffExpense").textContent = (+data.difference).toFixed(2);
 
+  // income section now shows family_income too
   const incomeDiv = document.getElementById('incomeDisplay');
-  incomeDiv.innerHTML = `<div class="income-item">Total Income: ${(+data.sum_income).toFixed(2)} €</div>`;
+  incomeDiv.innerHTML = `
+    <div class="income-item">Total Income: ${(+data.sum_income).toFixed(2)} €</div>
+    <div class="income-item">Family Income: ${(+data.family_income).toFixed(2)} €</div>
+  `;
 
+  // expenses block untouched
   const expenseDiv = document.getElementById('expenseDisplay');
   expenseDiv.innerHTML = `<div class="expense-item">Total Expenses: ${(+data.sum_expenses).toFixed(2)} €</div>`;
 }
