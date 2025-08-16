@@ -1,5 +1,4 @@
-const SUPABASE_URL = "https://mlkkehhdymhqctxlioov.supabase.co";
-const SUPABASE_KEY = "YOUR_ANON_KEY"; // замените на ваш anon key
+import { supabase } from './supabase/supabaseClient.js';
 
 let currentPersonId = null;
 let currentYear = 2025;
@@ -13,19 +12,22 @@ const personButtons = {
 let usersList = []; // [{id,name},...]
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await loadUsers();
+  // 1. загрузка пользователей
+  const { data } = await supabase.from('users').select('id, name');
+  usersList = data;
 
-  // Инициализация кнопок
+  // 2. инициализация кнопок
   personButtons['person1'] = document.getElementById('person1');
   personButtons['person2'] = document.getElementById('person2');
 
   usersList.forEach((u, idx) => {
-    const btn = personButtons['person' + (idx+1)];
+    const btn = personButtons['person'+(idx+1)];
     btn.textContent = u.name;
     btn.dataset.userid = u.id;
     btn.addEventListener('click', () => selectPersonById(u.id));
   });
 
+  // 3. обработчики года и месяца
   document.getElementById('yearSelect').addEventListener('change', () => {
     currentYear = +document.getElementById('yearSelect').value;
     loadData();
@@ -38,34 +40,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderIncomeInputs();
   });
 
+  // 4. выбрать первого пользователя по умолчанию
   selectPersonById(usersList[0].id);
 });
 
-async function fetchSupabase(endpoint, filters={}) {
-  const url = new URL(`${SUPABASE_URL}/rest/v1/${endpoint}`);
-  for (const key in filters) {
-    const val = typeof filters[key] === 'string' && key === 'user_id' 
-                  ? `eq."${filters[key]}"` 
-                  : `eq.${filters[key]}`;
-    url.searchParams.set(key, val);
-  }
-  const resp = await fetch(url.toString(), {
-    headers: {
-      "apikey": SUPABASE_KEY,
-      "Authorization": `Bearer ${SUPABASE_KEY}`,
-      "Accept": "application/json"
-    }
-  });
-  if (!resp.ok) throw new Error(`HTTP ${resp.status} - ${resp.statusText}`);
-  return await resp.json();
-}
-
-async function loadUsers() {
-  const data = await fetchSupabase('users');
-  usersList = data;
-}
-
-function selectPersonById(id) {
+function selectPersonById(id){
   currentPersonId = id;
   Object.keys(personButtons).forEach(k => {
     personButtons[k].classList.toggle(
@@ -77,76 +56,89 @@ function selectPersonById(id) {
   renderIncomeInputs();
 }
 
-// ----------------- Load Monthly Finance -----------------
 async function loadData() {
-  if (!currentPersonId) return;
+  if(!currentPersonId) return;
 
-  const data = await fetchSupabase('monthly_finance_2', {
-    user_id: currentPersonId,
-    year: currentYear,
-    month: currentMonth,
-    limit: 1
-  });
+  const { data, error } = await supabase
+    .from('monthly_finance_2')
+    .select('*')
+    .eq('user_id', currentPersonId)
+    .eq('year', currentYear)
+    .eq('month', currentMonth)
+    .limit(1)
+    .single();
 
-  const record = data[0];
-  if (!record) return;
+  if(error){
+    console.error(error);
+    return;
+  }
 
-  document.getElementById("startCash").textContent = (+record.start_cash).toFixed(2);
-  document.getElementById("endCash").textContent = (+record.end_cash).toFixed(2);
-  document.getElementById("incomePercent").textContent = (+record.income_percent).toFixed(2);
-  document.getElementById("totalFamilyExpense").textContent = (+record.sum_expenses).toFixed(2);
-  document.getElementById("fairExpense").textContent = (+record.fair_share).toFixed(2);
-  document.getElementById("diffExpense").textContent = (+record.difference).toFixed(2);
+  if(!data) return;
+
+  document.getElementById("startCash").textContent = (+data.start_cash).toFixed(2);
+  document.getElementById("endCash").textContent = (+data.end_cash).toFixed(2);
+  document.getElementById("incomePercent").textContent = (+data.income_percent).toFixed(2);
+  document.getElementById("totalFamilyExpense").textContent = (+data.sum_expenses).toFixed(2);
+  document.getElementById("fairExpense").textContent = (+data.fair_share).toFixed(2);
+  document.getElementById("diffExpense").textContent = (+data.difference).toFixed(2);
 
   const incomeDiv = document.getElementById('incomeDisplay');
-  incomeDiv.innerHTML = `<div class="income-item">Total Income: ${(+record.sum_income).toFixed(2)} €</div>
-                         <div class="income-item">Family Income: ${(+record.family_income).toFixed(2)} €</div>`;
+  incomeDiv.innerHTML = `<div class="income-item">Total Income: ${(+data.sum_income).toFixed(2)} €</div>
+                         <div class="income-item">Family Income: ${(+data.family_income).toFixed(2)} €</div>`;
 
   const expenseDiv = document.getElementById('expenseDisplay');
-  expenseDiv.innerHTML = `<div class="expense-item">Total Expenses: ${(+record.sum_expenses).toFixed(2)} €</div>`;
+  expenseDiv.innerHTML = `<div class="expense-item">Total Expenses: ${(+data.sum_expenses).toFixed(2)} €</div>`;
 }
 
-// ----------------- Income Inputs -----------------
-async function renderIncomeInputs() {
+// ------------------ Income Inputs ------------------
+
+async function renderIncomeInputs(){
   const container = document.getElementById('incomeInputs');
   container.innerHTML = "";
 
-  // 1. Шаблон источников
-  let templateData = await fetchSupabase('income_sources_template', {
-    user_id: currentPersonId,
-    year: currentYear
-  });
-  
-  if (!templateData || templateData.length === 0) {
-    // создаем 6 строк
-    for (let i=1; i<=6; i++) {
-      await fetch(`${SUPABASE_URL}/rest/v1/income_sources_template`, {
-        method: 'POST',
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify([{user_id: currentPersonId, year: currentYear, slot_number: i, source:"", type:true}])
+  // 1. грузим шаблон источников по user_id
+  let { data: templateData } = await supabase
+    .from('income_sources_template')
+    .select('*')
+    .eq('user_id', currentPersonId)
+    .eq('year', currentYear)
+    .order('slot_number', {ascending: true});
+
+  // если пусто — создаем 6 строк
+  if(!templateData || templateData.length === 0){
+    for(let i=1;i<=6;i++){
+      await supabase.from('income_sources_template').insert({
+        user_id: currentPersonId,
+        year: currentYear,
+        slot_number: i,
+        source: "",
+        type: true
       });
     }
-    templateData = await fetchSupabase('income_sources_template', {
-      user_id: currentPersonId,
-      year: currentYear
-    });
+    const res = await supabase
+      .from('income_sources_template')
+      .select('*')
+      .eq('user_id', currentPersonId)
+      .eq('year', currentYear)
+      .order('slot_number', {ascending: true});
+    templateData = res.data;
   }
 
-  // 2. Реальные суммы
-  const incomeRows = await fetchSupabase('income', {
-    user_id: currentPersonId,
-    year: currentYear,
-    month: currentMonth
-  });
+  // 2. загружаем реальные Amount для месяца
+  const { data: incomeRows } = await supabase
+    .from('income')
+    .select('*')
+    .eq('user_id', currentPersonId)
+    .eq('year', currentYear)
+    .eq('month', currentMonth);
 
-  for (const row of templateData) {
+  if(!templateData) return;
+
+  // 3. рисуем строки
+  for(const row of templateData){
     let amountVal = 0;
-    const rec = incomeRows?.find(r => r.source === row.source);
-    if (rec) amountVal = rec.amount;
+    const rec = incomeRows?.find(r=>r.source===row.source);
+    if(rec) amountVal = rec.amount;
 
     const div = document.createElement('div');
     div.classList.add('income-item');
@@ -162,85 +154,64 @@ async function renderIncomeInputs() {
   }
 
   // --- события ---
+
+  // Source
   container.querySelectorAll('.income-source').forEach(inp=>{
     inp.addEventListener('input', async(e)=>{
-      const slot = +e.target.dataset.slot;
+      const slot=+e.target.dataset.slot;
       const val = e.target.value;
-      await fetch(`${SUPABASE_URL}/rest/v1/income_sources_template?user_id=eq."${currentPersonId}"&year=eq.${currentYear}&slot_number=eq.${slot}`, {
-        method: 'PATCH',
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({source: val})
-      });
+      await supabase.from('income_sources_template')
+        .update({source:val})
+        .eq('user_id',currentPersonId)
+        .eq('year',currentYear)
+        .eq('slot_number',slot);
     });
   });
 
-  container.querySelectorAll('.income-amount').forEach(inp=>{
-    inp.addEventListener('input', async(e)=>{
-      const slot = +e.target.dataset.slot;
-      const amount = parseFloat(e.target.value) || 0;
-      const srcRow = templateData.find(r=>r.slot_number===slot);
-      if(!srcRow || !srcRow.source) return;
-
-      await fetch(`${SUPABASE_URL}/rest/v1/income`, {
-        method: 'POST',
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json",
-          "Prefer": "resolution=merge-duplicates"
-        },
-        body: JSON.stringify([{
-          user_id: currentPersonId,
-          year: currentYear,
-          month: currentMonth,
-          source: srcRow.source,
-          type: srcRow.type,
-          amount: amount
-        }])
-      });
-    });
-  });
-
+  // Toggle → шаблон + income
   container.querySelectorAll('.income-type-toggle').forEach(inp=>{
     inp.addEventListener('change', async(e)=>{
-      const slot = +e.target.dataset.slot;
-      const val = inp.checked;
-      const srcRow = templateData.find(r=>r.slot_number===slot);
-      if(!srcRow || !srcRow.source) return;
+      const slot=+e.target.dataset.slot;
+      const val = e.target.checked;
 
       // обновляем шаблон
-      await fetch(`${SUPABASE_URL}/rest/v1/income_sources_template?user_id=eq."${currentPersonId}"&year=eq.${currentYear}&slot_number=eq.${slot}`, {
-        method: 'PATCH',
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({type: val})
-      });
+      const { data:srcTemplate } = await supabase
+        .from('income_sources_template')
+        .update({type:val})
+        .eq('user_id',currentPersonId)
+        .eq('year',currentYear)
+        .eq('slot_number',slot)
+        .select()
+        .single();
 
-      // обновляем income
-      await fetch(`${SUPABASE_URL}/rest/v1/income`, {
-        method: 'POST',
-        headers: {
-          "apikey": SUPABASE_KEY,
-          "Authorization": `Bearer ${SUPABASE_KEY}`,
-          "Content-Type": "application/json",
-          "Prefer": "resolution=merge-duplicates"
-        },
-        body: JSON.stringify([{
-          user_id: currentPersonId,
-          year: currentYear,
-          month: currentMonth,
-          source: srcRow.source,
-          type: val,
-          amount: 0
-        }])
-      });
+      // upsert в income
+      const existing = incomeRows?.find(r=>r.source === srcTemplate.source);
+      await supabase.from('income').upsert([{
+        user_id: currentPersonId,
+        year: currentYear,
+        month: currentMonth,
+        source: srcTemplate.source,
+        type: val,
+        amount: existing?.amount || 0
+      }], {onConflict:['user_id','year','month','source']});
+    });
+  });
+
+  // Amount
+  container.querySelectorAll('.income-amount').forEach(inp=>{
+    inp.addEventListener('input', async(e)=>{
+      const slot=+e.target.dataset.slot;
+      const amount=parseFloat(e.target.value)||0;
+      const srcRow = templateData.find(r=>r.slot_number===slot);
+      if(!srcRow || !srcRow.source) return;
+      await supabase.from('income').upsert([{
+        user_id: currentPersonId,
+        year: currentYear,
+        month: currentMonth,
+        source: srcRow.source,
+        type: srcRow.type,
+        amount: amount
+      }], {onConflict:['user_id','year','month','source']});
     });
   });
 }
