@@ -138,17 +138,48 @@ async function renderIncomeInputs(){
     })
   });
 
-  container.querySelectorAll('.income-type-toggle').forEach(inp=>{
-    inp.addEventListener('change', async (e)=>{
-      const slot = +e.target.dataset.slot;
-      const val  = e.target.checked;
-      await supabase.from('income_sources_template')
-        .update({type: val})
-        .eq('user_id', currentPersonId)
-        .eq('slot_number', slot)
-        .eq('year', currentYear);
+ container.querySelectorAll('.income-type-toggle').forEach(inp => {
+  inp.addEventListener('change', async e => {
+    const slot = +e.target.dataset.slot;
+    const val  = e.target.checked;
+
+    // 1) обновляем шаблон
+    await supabase.from('income_sources_template')
+      .update({ type: val })
+      .eq('user_id', currentPersonId)
+      .eq('slot_number', slot)
+      .eq('year', currentYear);
+
+    // 2) получаем source по этому слоту
+    const src = sources.find(s => s.slot_number === slot);
+    if (!src || !src.source) return;
+
+    // 3) вытаскиваем текущий amount, если уже есть запись
+    let amount = 0;
+    const { data: existing } = await supabase.from('income')
+      .select('amount')
+      .eq('user_id', currentPersonId)
+      .eq('year', currentYear)
+      .eq('month', currentMonth)
+      .eq('source', src.source)
+      .maybeSingle();
+
+    if(existing) amount = existing.amount;
+
+    // 4) upsert
+    await supabase.from('income').upsert([{
+      user_id: currentPersonId,
+      year: currentYear,
+      month: currentMonth,
+      source: src.source,
+      type: val,
+      amount: amount
+    }], {
+      onConflict: ['user_id','year','month','source']
     });
   });
+});
+
 
   container.querySelectorAll('.income-amount').forEach(inp=>{
     inp.addEventListener('input', async (e)=>{
