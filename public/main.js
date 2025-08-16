@@ -85,11 +85,10 @@ async function loadData(){
 }
 
 async function renderIncomeInputs(){
-    console.log("renderIncomeInputs", currentPersonId, currentYear, currentMonth);
   const container = document.getElementById('incomeInputs');
   container.innerHTML = "";
 
-  // 1. грузим или создаем шаблон источников
+  // 1. грузим или создаем шаблон источников (user_id!)
   let { data: templateData } = await supabase
     .from('income_sources_template')
     .select('*')
@@ -101,18 +100,18 @@ async function renderIncomeInputs(){
     templateData = [];
     for(let i=1;i<=6;i++){
       let rec = {
-        user_id:currentPersonId,
-        year:currentYear,
-        slot_number:i,
-        source:"",
-        type:true
+        user_id: currentPersonId,
+        year: currentYear,
+        slot_number: i,
+        source: "",
+        type: true
       };
-      const {data:inserted} = await supabase.from('income_sources_template').insert(rec).select().single();
+      const { data:inserted } = await supabase.from('income_sources_template').insert(rec).select().single();
       templateData.push(inserted);
     }
   }
 
-  // 2. загружаем реальные Amount из income
+  // 2. получаем введенные суммы по текущему месяцу
   const { data: incomeRows } = await supabase
     .from('income')
     .select('*')
@@ -120,7 +119,7 @@ async function renderIncomeInputs(){
     .eq('year', currentYear)
     .eq('month', currentMonth);
 
-  // 3. рисуем 6 строк
+  // 3. рисуем строки
   for(const row of templateData){
     let amountVal = 0;
     const rec = incomeRows?.find(r=>r.source===row.source);
@@ -139,9 +138,9 @@ async function renderIncomeInputs(){
     container.appendChild(div);
   }
 
-  // --- события ---
+  // --- events ---
 
-  // обновляем шаблон source
+  // Source
   container.querySelectorAll('.income-source').forEach(inp=>{
     inp.addEventListener('input', async(e)=>{
       const slot=+e.target.dataset.slot;
@@ -154,14 +153,15 @@ async function renderIncomeInputs(){
     });
   });
 
-  // toggle сохранение в шаблон + в income
+  // Toggle → шаблон + income
   container.querySelectorAll('.income-type-toggle').forEach(inp=>{
     inp.addEventListener('change', async(e)=>{
       const slot=+e.target.dataset.slot;
       const val = e.target.checked;
 
       // обновляем шаблон
-      const { data:src } = await supabase.from('income_sources_template')
+      const { data:srcTemplate } = await supabase
+        .from('income_sources_template')
         .update({type:val})
         .eq('user_id',currentPersonId)
         .eq('year',currentYear)
@@ -170,18 +170,19 @@ async function renderIncomeInputs(){
         .single();
 
       // upsert в income
+      const existing = incomeRows?.find(r=>r.source === srcTemplate.source);
       await supabase.from('income').upsert([{
-        user_id:currentPersonId,
-        year:currentYear,
-        month:currentMonth,
-        source:src.source,
-        type:val,
-        amount: incomeRows?.find(r=>r.source===src.source)?.amount || 0
+        user_id: currentPersonId,
+        year: currentYear,
+        month: currentMonth,
+        source: srcTemplate.source,
+        type: val,
+        amount: existing?.amount || 0
       }], {onConflict:['user_id','year','month','source']});
     });
   });
 
-  // изменяем Amount → сохраняем в income
+  // Amount
   container.querySelectorAll('.income-amount').forEach(inp=>{
     inp.addEventListener('input', async(e)=>{
       const slot=+e.target.dataset.slot;
@@ -189,15 +190,16 @@ async function renderIncomeInputs(){
       const srcRow = templateData.find(r=>r.slot_number===slot);
       if(!srcRow || !srcRow.source) return;
       await supabase.from('income').upsert([{
-        user_id:currentPersonId,
-        year:currentYear,
-        month:currentMonth,
-        source:srcRow.source,
-        type:srcRow.type,
-        amount:amount
+        user_id: currentPersonId,
+        year: currentYear,
+        month: currentMonth,
+        source: srcRow.source,
+        type: srcRow.type,
+        amount: amount
       }], {onConflict:['user_id','year','month','source']});
     });
   });
 }
+
 
 
