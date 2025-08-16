@@ -74,7 +74,6 @@ async function renderIncomeInputs(){
   const container = document.getElementById('incomeInputs');
   container.innerHTML = "";
 
-  // Проверяем шаблон источников для текущего user + year
   const { data: templateData } = await supabase
     .from('income_sources_template')
     .select('*')
@@ -83,9 +82,7 @@ async function renderIncomeInputs(){
     .order('slot_number', { ascending: true });
 
   let sources = [];
-
   if (!templateData || templateData.length === 0) {
-    // Если ещё нет шаблонов → создаём 6 пустых
     for (let i = 1; i <= 6; i++) {
       let rec = {
         user_id: currentPersonId,
@@ -101,22 +98,20 @@ async function renderIncomeInputs(){
     sources = templateData;
   }
 
-  // Отрисовать 6 строк
   for (const row of sources) {
     const div = document.createElement("div");
     div.classList.add("income-item");
     div.innerHTML = `
-      <input type="text" class="income-source"  data-slot="${row.slot_number}" value="${row.source ?? ""}" placeholder="Source"/>
-      <input type="number" class="income-amount"  data-slot="${row.slot_number}" value="0" placeholder="Amount"/>
-      <label>
+      <input type="text" class="income-source" data-slot="${row.slot_number}" value="${row.source ?? ""}" placeholder="Source"/>
+      <input type="number" class="income-amount" data-slot="${row.slot_number}" value="0" placeholder="Amount"/>
+      <label class="switch">
         <input type="checkbox" class="income-type-toggle" data-slot="${row.slot_number}" ${row.type ? "checked":""}/>
-        Income
+        <span class="slider"></span>
       </label>
     `;
     container.appendChild(div);
   }
 
-  // События: сохранение source
   container.querySelectorAll('.income-source').forEach(inp=>{
     inp.addEventListener('input', async (e)=>{
       const slot = +e.target.dataset.slot;
@@ -129,7 +124,6 @@ async function renderIncomeInputs(){
     })
   });
 
-  // Сохраняем изменение toggle сразу в шаблон
   container.querySelectorAll('.income-type-toggle').forEach(inp=>{
     inp.addEventListener('change', async (e)=>{
       const slot = +e.target.dataset.slot;
@@ -142,13 +136,10 @@ async function renderIncomeInputs(){
     });
   });
 
-  // Сохраняем Amount → таблица income (upsert по user/year/month/source)
   container.querySelectorAll('.income-amount').forEach(inp=>{
     inp.addEventListener('input', async (e)=>{
       const slot   = +e.target.dataset.slot;
       const amount = parseFloat(e.target.value) || 0;
-
-      // получаем source + type из шаблона
       const { data: src } = await supabase
         .from('income_sources_template')
         .select('*')
@@ -156,9 +147,7 @@ async function renderIncomeInputs(){
         .eq('slot_number', slot)
         .eq('year', currentYear)
         .single();
-
-      if(!src || !src.source) return; // если ещё не ввели source
-
+      if(!src || !src.source) return;
       await supabase.from('income').upsert([{
         user_id: currentPersonId,
         year: currentYear,
@@ -172,4 +161,5 @@ async function renderIncomeInputs(){
     });
   });
 }
+
 

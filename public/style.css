@@ -18,3 +18,43 @@ header { height:60px; background:#3a6ea5; color:white; display:flex; align-items
 .input-block { flex:1; background:#fff; border:1px solid #E0E0E0; box-shadow:0 4px 12px rgba(0,0,0,0.04); border-radius:8px; padding:20px; display:flex; flex-direction:column; gap:10px; }
 
 .income-item, .expense-item { display:flex; justify-content:space-between; padding:8px 10px; border-bottom:1px solid #E0E0E0; font-size:16px; }
+/* Toggle switch */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 22px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 22px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: #3a6ea5;
+}
+input:checked + .slider:before {
+  transform: translateX(16px);
+}
