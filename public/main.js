@@ -10,15 +10,28 @@ const personButtons = {
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
+  // инициализация кнопок выбора пользователя
   personButtons['person1'] = document.getElementById('person1');
   personButtons['person2'] = document.getElementById('person2');
 
   personButtons['person1'].addEventListener('click', ()=>selectPerson('Lesha'));
   personButtons['person2'].addEventListener('click', ()=>selectPerson('Lena'));
 
-  document.getElementById('yearSelect').addEventListener('change', ()=>{ currentYear=+document.getElementById('yearSelect').value; loadData(); });
-  document.getElementById('monthSelect').addEventListener('change', ()=>{ currentMonth=document.getElementById('monthSelect').selectedIndex+1; loadData(); });
+  // выбор года
+  document.getElementById('yearSelect').addEventListener('change', ()=>{
+    currentYear = +document.getElementById('yearSelect').value;
+    loadData();
+    renderIncomeInputs();
+  });
 
+  // выбор месяца
+  document.getElementById('monthSelect').addEventListener('change', ()=>{
+    currentMonth = document.getElementById('monthSelect').selectedIndex + 1;
+    loadData();
+    renderIncomeInputs();
+  });
+
+  // первый запуск с дефолтным пользователем
   selectPerson('Lesha');
 });
 
@@ -30,6 +43,7 @@ function selectPerson(name){
   loadData();
   renderIncomeInputs();
 }
+
 
 async function loadData(){
   if(!currentPersonId) return;
