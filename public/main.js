@@ -85,6 +85,7 @@ async function loadData(){
 }
 
 async function renderIncomeInputs(){
+    console.log("renderIncomeInputs", currentPersonId, currentYear, currentMonth);
   const container = document.getElementById('incomeInputs');
   container.innerHTML = "";
 
