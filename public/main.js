@@ -85,87 +85,74 @@ async function renderIncomeInputs(){
   const container = document.getElementById('incomeInputs');
   container.innerHTML = "";
 
-  // 1. загрузить шаблон источников (income_sources_template)
-  let {data:templateData} = await supabase
+  // 1. Загрузить шаблон
+  let { data: templateData } = await supabase
     .from('income_sources_template')
     .select('*')
     .eq('user_id', currentPersonId)
     .eq('year', currentYear);
 
-  // если нет шаблона — формируем 6 пустых слотов локально
+  // если нет → создаём 6 пустых
   if(!templateData || templateData.length === 0){
     templateData = [];
     for(let i=1;i<=6;i++){
-      templateData.push({slot_number:i,source:"",type:true});
+      templateData.push({slot_number: i, source:"", type:true});
     }
-  }else{
+  } else {
     for(let i=1;i<=6;i++){
       if(!templateData.find(r=>r.slot_number===i)){
-        templateData.push({slot_number:i,source:"",type:true});
+        templateData.push({slot_number:i, source:"", type:true });
       }
     }
   }
 
-  // 2. загрузить реальные amount-ы
-  const {data:incomeRows} = await supabase
+  // 2. Загрузить реальные income
+  const { data: incomeRows } = await supabase
     .from('income')
     .select('*')
-    .eq('user_id',currentPersonId)
-    .eq('year',currentYear)
-    .eq('month',currentMonth);
+    .eq('user_id', currentPersonId)
+    .eq('year', currentYear)
+    .eq('month', currentMonth);
 
-  // 3. рисуем 6 строк
+  // 3. Сортировка и рендер
   templateData.sort((a,b)=>a.slot_number-b.slot_number);
   for(const row of templateData){
-    const rec = incomeRows?.find(r=>r.slot_number===row.slot_number) || {};
-    const src  = rec.source || row.source || "";
-    const amt  = rec.amount ?? 0;
-
+    const rec = incomeRows?.find(r=>r.slot_number === row.slot_number) || {};
     const div = document.createElement('div');
     div.classList.add('income-item');
     div.innerHTML = `
-      <input type="text"  class="income-source"      data-slot="${row.slot_number}" value="${src}" placeholder="Source">
-      <input type="number" class="income-amount"     data-slot="${row.slot_number}" value="${amt}" placeholder="Amount">
+      <input type="text" class="income-source" data-slot="${row.slot_number}" value="${rec.source || row.source || ""}" placeholder="Source"/>
+      <input type="number" class="income-amount" data-slot="${row.slot_number}" value="${rec.amount || 0}" placeholder="Amount"/>
       <label class="switch">
-         <input type="checkbox" class="income-type-toggle" data-slot="${row.slot_number}" ${row.type ? 'checked' : ''}>
-         <span class="slider"></span>
+        <input type="checkbox" class="income-type-toggle" data-slot="${row.slot_number}" ${row.type?"checked":""}>
+        <span class="slider"></span>
       </label>
     `;
     container.appendChild(div);
   }
 
-  // ---------------- единственное делегированное событие для всех ----------------
-  container.oninput = async function(e){
+  //----------------- обработчики с USE SDK -----------------
+  container.addEventListener('input', async(e)=>{
     const slot = +e.target.dataset.slot;
     if(!slot) return;
 
-    // Source редактирование: сохраняем в шаблон
+    // Source
     if(e.target.classList.contains('income-source')){
-      const srcValue = e.target.value;
+      const srcVal = e.target.value;
       await supabase.from('income_sources_template').upsert({
         user_id: currentPersonId,
         year: currentYear,
         slot_number: slot,
-        source: srcValue,
+        source: srcVal,
         type: true
-      }, {onConflict:['user_id','year','slot_number']});
+      }, { onConflict: ['user_id','year','slot_number'] });
     }
 
-    // Amount редактирование: сохраняем в income
+    // Amount
     if(e.target.classList.contains('income-amount')){
-      const amountVal = parseFloat(e.target.value)||0;
-      const tmpl      = templateData.find(r=>r.slot_number===slot);
+      const amountVal = parseFloat(e.target.value) || 0;
+      const tmpl = templateData.find(r=>r.slot_number===slot);
       if(!tmpl || !tmpl.source) return;
-      console.log(
-      'saving income:',
-        currentPersonId,
-        currentYear,
-        currentMonth,
-        slot,
-        tmpl?.source,
-        tmpl?.type,
-        amountVal
-        );
       await supabase.from('income').upsert([{
         user_id: currentPersonId,
         year: currentYear,
@@ -174,15 +161,14 @@ async function renderIncomeInputs(){
         source: tmpl.source,
         type: tmpl.type,
         amount: amountVal
-      }], {onConflict:['user_id','year','month','slot_number']});
-      loadData(); // обновить верхнюю статистику
+      }], { onConflict:['user_id','year','month','slot_number']});
+      loadData();
     }
-  };
+  });
 
-  container.onchange = async function(e){
+  container.addEventListener('change', async(e)=>{
     const slot = +e.target.dataset.slot;
     if(!slot) return;
-    // toggle
     if(e.target.classList.contains('income-type-toggle')){
       const newType = e.target.checked;
       const tmpl    = templateData.find(r=>r.slot_number===slot);
@@ -193,7 +179,7 @@ async function renderIncomeInputs(){
         slot_number: slot,
         source: srcVal,
         type: newType
-      }, {onConflict:['user_id','year','slot_number']});
+      }, { onConflict:['user_id','year','slot_number']});
       if(srcVal){
         await supabase.from('income').upsert([{
           user_id: currentPersonId,
@@ -203,9 +189,10 @@ async function renderIncomeInputs(){
           source: srcVal,
           type: newType,
           amount: 0
-        }], {onConflict:['user_id','year','month','slot_number']});
+        }], { onConflict:['user_id','year','month','slot_number']});
+        loadData();
       }
-      loadData();
     }
-  };
+  });
 }
+
