@@ -156,6 +156,16 @@ async function renderIncomeInputs(){
       const amountVal = parseFloat(e.target.value)||0;
       const tmpl      = templateData.find(r=>r.slot_number===slot);
       if(!tmpl || !tmpl.source) return;
+      console.log(
+      'saving income:',
+        currentPersonId,
+        currentYear,
+        currentMonth,
+        slot,
+        tmpl?.source,
+        tmpl?.type,
+        amountVal
+        );
       await supabase.from('income').upsert([{
         user_id: currentPersonId,
         year: currentYear,
